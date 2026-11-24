@@ -1,10 +1,12 @@
-import Main from "@/components/legacy/Main/Main";
-import WeaponCreator from "@/components/legacy/WeaponCreator/WeaponCreator";
+import type { Metadata } from 'next'
 
-export default async function KodningWeaponCreator() {
-    return (
-        <Main>
-            <WeaponCreator/>
-        </Main>
-    );
+import { WeaponCreator } from '@/components/weapon/WeaponCreator'
+
+export const metadata: Metadata = {
+  title: 'Kodning Weapon Creator',
+}
+
+// Content only: the shell comes from the root layout.
+export default function KodningWeaponCreatorPage() {
+  return <WeaponCreator />
 }
