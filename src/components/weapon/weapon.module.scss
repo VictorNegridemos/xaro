@@ -348,7 +348,8 @@
 
   @include portrait {
     // Two columns where there is room for it, still one control per row on a narrow phone.
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    // 15.5rem keeps the longest proficiency label ("Martial ranged two-handed") untruncated.
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
   }
 }
 

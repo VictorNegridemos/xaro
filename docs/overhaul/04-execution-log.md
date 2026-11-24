@@ -341,3 +341,9 @@ Inputs: 05-verification-1-v4.md (F1, F2, F3, O1), v1 N4, v3 O3. No git index cha
 - **No horizontal scroll** (scrollWidth = innerWidth) on `/`, `/kodning_weapon_creator`, `/entry/warp`, `/search?q=warp` at 1440×900, 844×390, 390×844, 360×640.
 - **Left as is (noted):** duplicate search box on `/search`; per-word tab stops on entry pages.
 - **Gate:** weapon tests 22/22 pass; `npm run typecheck` 0; `npm run lint` 0 (run while agent A's src/lib changes were in the tree).
+
+## Fix round 2 — orchestrator (2026-11-24)
+
+- `src/lib/search/query.ts` `prefixTokens`: de-duplicate tokens after stripping combining marks / variation selectors (R2-A note N1). Search tests 23/23.
+- `src/components/weapon/weapon.module.scss` portrait field grid: minimum column 14rem → 15.5rem so "Martial ranged two-handed" is not truncated at 820×1180 (R2-B F1). Checked in the browser: 820×1180 room 300px vs 193px needed; 360×640 room 220px, no horizontal scroll.
+- Gate: typecheck 0, lint 0, tests 278/278.

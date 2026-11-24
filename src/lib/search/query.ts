@@ -84,9 +84,10 @@ export function searchTerms(q: string): string {
 }
 
 function prefixTokens(text: string): string[] {
-  return (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
-    .slice(0, MAX_PREFIX_TOKENS)
+  const tokens = (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
     .map((token) => Array.from(token).slice(0, MAX_PREFIX_TOKEN_CHARS).join(''))
+  // De-duplicate after stripping marks/selectors so variants of one word bind once.
+  return [...new Set(tokens)].slice(0, MAX_PREFIX_TOKENS)
 }
 
 /**
