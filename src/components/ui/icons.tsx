@@ -1,4 +1,4 @@
-// STUB created by Foundation (Step 1): simple inline SVG glyphs; names and props are final (plan 7.5).
+// Inline SVG glyphs (plan 7.5); names and props are final.
 // The Design workstream may redraw the paths.
 import type React from 'react'
 

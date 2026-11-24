@@ -194,13 +194,3 @@
   from { opacity: 0.45; }
   to { opacity: 0.9; }
 }
-
-// Minimal page frame; Step 3 puts the page into the shell and its Panel frames.
-.page {
-  display: grid;
-  gap: var(--sp-4);
-  inline-size: 100%;
-  max-inline-size: calc(var(--measure) + 2 * var(--sp-4));
-  margin-inline: auto;
-  padding: var(--sp-6) var(--sp-4);
-}

@@ -1,11 +1,11 @@
 import type React from 'react'
 import { Button } from '@/components/ui/Button'
 import { StateBlock } from '@/components/ui/StateBlock'
-import styles from '@/components/entry/EntryView.module.scss'
+import { PageFrame } from '@/components/shell/PageFrame'
 
 export default function EntryNotFound(): React.JSX.Element {
   return (
-    <main className={styles.page}>
+    <PageFrame width="measure">
       <StateBlock
         kind="empty"
         title="NO RECORD — the archive holds no entry under that designation."
@@ -13,6 +13,6 @@ export default function EntryNotFound(): React.JSX.Element {
       >
         <p>It may have been renamed, purged, or never filed.</p>
       </StateBlock>
-    </main>
+    </PageFrame>
   )
 }

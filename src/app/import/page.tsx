@@ -4,11 +4,11 @@ import type { Metadata } from 'next'
 import { ImportExplainer } from '@/components/import/ImportExplainer'
 import { ImportQueue } from '@/components/import/ImportQueue'
 import { UploadForm } from '@/components/import/UploadForm'
+import { PageFrame } from '@/components/shell/PageFrame'
 import { Panel } from '@/components/ui/Panel'
 import { requirePageAuth } from '@/lib/auth/session'
 import { listImportSources } from '@/lib/data/imports'
 import type { ImportSourceSummary } from '@/lib/data/types'
-import styles from './import.module.scss'
 
 export const metadata: Metadata = {
   title: 'Import — X\'aro',
@@ -27,13 +27,12 @@ export default async function ImportPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <h1 className={styles.title}>Import</h1>
+    <PageFrame width="wide" kicker="Archive · intake" title="Import">
       <ImportExplainer />
       <Panel title="Upload">
         <UploadForm />
       </Panel>
       <ImportQueue sources={sources} ok={ok} />
-    </main>
+    </PageFrame>
   )
 }

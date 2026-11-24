@@ -1,4 +1,4 @@
-// STUB created by Foundation (Step 1): unstyled; props are final (plan 7.5).
+// Fixed label and tone per entity type (plan 7.5).
 import type React from 'react'
 import type { EntityType } from '@/lib/data/types'
 import { Badge, type BadgeTone } from './Badge'

@@ -14,7 +14,7 @@ export interface EntryViewProps {
   entity: EntityDetail
   /** True when logged in: shows the Edit link. The server checks the session again on every write. */
   canEdit: boolean
-  /** Further controls for logged-in users (Step 3: Delete). Rendered only when canEdit is true. */
+  /** Further controls for logged-in users (Delete). Rendered only when canEdit is true. */
   actions?: React.ReactNode
 }
 
@@ -59,7 +59,6 @@ export function EntryView({ entity, canEdit, actions }: EntryViewProps): React.J
       <div className={styles.actions}>
         <BackButton />
         {canEdit ? <Button href={`${entryHref(entity.slug)}/edit`} variant="primary">Edit</Button> : null}
-        {/* entry actions: Step 3 adds Delete */}
         {canEdit ? actions : null}
       </div>
     </article>

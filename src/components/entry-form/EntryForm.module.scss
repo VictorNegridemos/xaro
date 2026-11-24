@@ -1,0 +1,131 @@
+@use 'index' as *;
+
+// Entry create/edit form, attribute rows and the delete dialog (plan 9.3).
+
+.form {
+  display: grid;
+  gap: var(--sp-4);
+  min-inline-size: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  align-items: start;
+
+  > * {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
+  }
+}
+
+.grow {
+  flex-grow: 3;
+}
+
+.body {
+  min-block-size: 12rem;
+  font-family: var(--font-body);
+  line-height: var(--lh-body);
+}
+
+.attributes {
+  display: grid;
+  gap: var(--sp-3);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--c-line);
+}
+
+.legend {
+  @include label-text;
+  padding-inline: var(--sp-2);
+  color: var(--c-text-dim);
+}
+
+.hint,
+.none {
+  margin: 0;
+  color: var(--c-text-faint);
+  font-size: var(--fs-sm);
+
+  code {
+    font-family: var(--font-mono);
+    color: var(--c-text-dim);
+  }
+}
+
+.attributeRows {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attributeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.attributeKey {
+  flex: 1 1 9rem;
+  min-inline-size: 0;
+  font-family: var(--font-mono);
+}
+
+.attributeValue {
+  flex: 3 1 14rem;
+  min-inline-size: 0;
+}
+
+.error {
+  margin: 0;
+  color: var(--c-blood);
+  font-size: var(--fs-sm);
+}
+
+.message {
+  margin: 0;
+  min-block-size: 1.5em;
+  color: var(--c-blood);
+  font-size: var(--fs-sm);
+
+  &:empty {
+    min-block-size: 0;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.dialog {
+  inline-size: min(28rem, calc(100vw - 2rem));
+  padding: var(--sp-5);
+  border: var(--bw) solid var(--c-blood-deep);
+  background: var(--c-hull);
+  color: var(--c-text);
+
+  p {
+    margin: 0 0 var(--sp-4);
+    line-height: var(--lh-body);
+    overflow-wrap: anywhere;
+  }
+
+  &::backdrop {
+    background: var(--c-scrim);
+  }
+}
+
+.dialogTitle {
+  @include display-text(var(--fs-md));
+  margin: 0 0 var(--sp-3);
+  color: var(--c-blood);
+}

@@ -7,8 +7,8 @@ import { test } from 'node:test'
 
 const ROOT = process.cwd()
 const SRC = path.join(ROOT, 'src')
-// STEP 1 EXCLUSION — Step 3 deletes src/components/legacy and sets this to null.
-const LEGACY_PARKING: string | null = 'src/components/legacy/'
+// The Step 1 parking folder src/components/legacy was deleted in Step 3; no exclusion remains.
+const LEGACY_PARKING: string | null = null
 
 const rel = (file: string) => path.relative(ROOT, file).split(path.sep).join('/')
 

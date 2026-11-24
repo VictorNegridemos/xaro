@@ -3,6 +3,7 @@
 import type { Metadata } from 'next'
 import type React from 'react'
 import { SearchResults } from '@/components/search/SearchResults'
+import { PageFrame } from '@/components/shell/PageFrame'
 import { Button } from '@/components/ui/Button'
 import { StateBlock } from '@/components/ui/StateBlock'
 import { TextInput } from '@/components/ui/TextInput'
@@ -69,7 +70,7 @@ export default async function SearchPage({ searchParams }: PageProps<'/search'>)
 
   const formQ = response ? response.q : rawQ.slice(0, MAX_QUERY_CHARS)
   return (
-    <main className={styles.page}>
+    <PageFrame width="measure">
       <SearchForm q={formQ} />
       {failure}
       {response && response.q === '' && response.type === null ? (
@@ -79,6 +80,6 @@ export default async function SearchPage({ searchParams }: PageProps<'/search'>)
         </>
       ) : null}
       {response && (response.q !== '' || response.type !== null) ? <SearchResults response={response} /> : null}
-    </main>
+    </PageFrame>
   )
 }

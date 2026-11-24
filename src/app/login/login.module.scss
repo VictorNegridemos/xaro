@@ -1,21 +1,12 @@
 @use 'index' as *;
 
-// Minimal page frame; Step 3 puts the page into the shell and its Panel frames.
-.page {
-  width: 100%;
-  max-width: 28rem;
-  margin-inline: auto;
-  padding: var(--sp-6) var(--sp-4);
+.body {
   display: grid;
   gap: var(--sp-4);
 }
 
-.title {
-  @include display-text(var(--fs-lg));
-  color: var(--accent);
-}
-
 .lead {
+  margin: 0;
   color: var(--c-text-dim);
   line-height: var(--lh-body);
 }

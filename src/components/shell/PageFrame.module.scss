@@ -1,0 +1,37 @@
+@use 'index' as *;
+
+// The shell's .frame already pads main#content; this only sets the width and the vertical rhythm.
+.page {
+  display: grid;
+  gap: var(--sp-4);
+  align-content: start;
+  inline-size: 100%;
+  min-inline-size: 0;
+  margin-inline: auto;
+}
+
+.narrow {
+  max-inline-size: 30rem;
+}
+
+.measure {
+  max-inline-size: var(--measure);
+}
+
+.wide {
+  max-inline-size: 56rem;
+}
+
+.title {
+  @include display-text(var(--fs-xl));
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.kicker {
+  @include label-text;
+  color: var(--c-text-faint);
+}

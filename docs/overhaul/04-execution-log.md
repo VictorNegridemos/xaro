@@ -263,3 +263,54 @@ Taken over from a previous agent that was cut off. Its draft (`src/lib/import/{c
 
 ### For Step 3
 Put `/import` into the shell and do its visual check logged in at the three layouts; nav item "Import" is already in `navItemsFor`. Verifiers: real sample import uses copies named `zz-verify-sample-log*.txt` (10.1), dry run first. The stub's unresolved relation ("Unknown Foundry") is intentional and shows as 1 skipped.
+
+## Step 3 — Integration (2026-11-24)
+
+Agent: Integration (sequential, whole repository). Local commit on `overhaul`; nothing pushed or deployed.
+
+### What was done (plan 9.3, in task order)
+
+1. **Entry create/edit/delete on the new tables.** `src/lib/entries/{limits,schema,handlers,routes}.ts`; `src/app/api/entries/route.ts` (POST), `src/app/api/entries/[id]/route.ts` (PUT, DELETE [O7]); `src/app/entry/new/page.tsx`, `src/app/entry/[slug]/edit/page.tsx` (both call `requirePageAuth(path)` first, `robots: noindex`); `src/components/entry-form/{EntryForm,AttributeEditor,DeleteEntryButton}.tsx`, `form-state.ts`, `EntryForm.module.scss`. Handlers follow the Import stream's factory pattern: `createEntryHandlers(deps)`, whose first step in every handler is `requireAuth(request)` = `requireApiAuth` (same-origin, then session); then `readJsonBody` (415/413/400), zod (400 `invalid_body` + `fields`), data layer, `revalidatePath('/', 'layout')`; unknown or non-numeric id gives 404; a DB failure gives 503. Field errors are keyed by top-level field; unknown fields and whole-body errors go under `_form`. `POST /api/import` and `DELETE /api/import/[id]` already call `requireApiAuth` first through their factories (checked).
+   Tests: `src/lib/entries/schema.test.ts` (11), `src/lib/entries/handlers.test.ts` (10), `src/lib/data/entities.test.ts` (6; drizzle `pg-proxy` recording double: the UPDATE sets exactly type/name/aliases/summary/body/attributes; a rename keeps the slug; slug rules incl. `ship-system`, `-2`, and `new` becoming `new-2`), `src/components/entry-form/EntryForm.test.tsx` (6: every stored attribute is rendered as a key/value row with its stored string; an unchanged save round-trips and passes the server schema; the DeleteEntryButton dialog).
+2. **Auth state in the UI.** Already wired by Design: `layout.tsx` passes `isLoggedIn()` to `AppShell`; `NavList`/`MenuList` render Add entry and Import only when logged in; `AuthControl` renders `<LogoutButton />` only when logged in, Login otherwise. Added Delete through `EntryView`'s `actions` prop (rendered only with `canEdit`). The shell search box is a `next/form` GET to `/search` (confirmed); InteractiveText words link to `/search?q=…` (confirmed in the browser).
+3. **Design system on the Step 2 pages.** New `src/components/shell/PageFrame.tsx` (+ module): width (`narrow`/`measure`/`wide`), rhythm, optional h1 and kicker; no padding of its own (the shell's `.frame` pads). No page renders `<main>` any more (`/login`, `/search` and its `loading.tsx`, `/entry/[slug]` and its `not-found.tsx`, `/import` changed; only `global-error.tsx`, which renders its own document, keeps one). `/login`: narrow frame + accent Panel; `/entry/[slug]`: measure frame, entry inside a Panel; `/entry/new`, `/entry/[slug]/edit`, `/import`: wide frame + Panels. Per-page `.page` rules removed (`login.module.scss` trimmed, `src/app/import/import.module.scss` deleted, `.page` removed from `EntryView.module.scss` and `SearchResults.module.scss`).
+4. **Legacy removal.** `src/components/legacy/**` deleted (60 files, incl. the parked WeaponCreator, `Form` posting to the 405 `/api/search`, `legacy-globals.scss`, `ShipStatus.module.scss`, `adapters.ts` with `legacySearch`, `data_functions.ts`); nothing imported it. ESLint legacy override removed; `LEGACY_PARKING = null` in `tests/repo-guards.test.ts`. Stale "STUB" headers in `ui/Highlight`, `ui/TypeBadge`, `ui/icons` replaced. `public/` is empty. No dependency removed: each of the 8 runtime dependencies is still imported.
+5. **`AGENTS.md`:** the installed Next 16.4.6 has `agentRules?: boolean` (`config-shared.d.ts`; docs `next-config-js/agentRules.md`). Set `agentRules: false` in `next.config.ts` and deleted the untracked `AGENTS.md`; the later `next dev` run did not recreate it. The version-matched-docs hint is in `CLAUDE.md`.
+6. `README.md` (replaced the one-line file) and `CLAUDE.md` written per 9.3 tasks 5 and 6.
+
+### Root `loading.tsx` removed (decision; deviation)
+
+With `src/app/loading.tsx` every page streamed, so status codes were lost: `/login` while logged in, `requirePageAuth` redirects, `notFound()` on `/entry/<unknown>` and `/ship_record/999999`, and the five legacy redirects (`permanentRedirect`, plan 2.2: 308) all answered **HTTP 200** with an in-body redirect or not-found UI (measured with curl on `next dev`). The root `loading.tsx` (listed in plan 2.1) was deleted; `src/app/search/loading.tsx` stays (that route never redirects or 404s). After: `/ship_record/1` 308 to `/entry/ereshkigal`, `/add_ship_record` 308, `/edit_ship_record/1` 308, `/ship_record/999999` and `/ship_record/abc` 404, `/entry/<unknown>` 404, `/login` while logged in 307 to `next`, protected pages logged out 307 (proxy). A proxy-based fix for `/login` only was tried first and reverted once the root boundary was gone. Cost: no generic skeleton during client navigation (the shell's route-change flicker remains).
+
+### Acceptance checks (plan 9.3, actual results)
+
+| Check | Result |
+|---|---|
+| `typecheck`, `lint`, `test`, `build` | all exit 0; **269 tests, 269 pass** |
+| Build route table | every app route `ƒ`; only `/icon.svg`, `/robots.txt` static |
+| `git ls-files src` with `.js/.jsx/.css` | no output |
+| legacy names outside `legacy-keys.ts` / as SQL identifiers | no match / no match |
+| `@ts-ignore`, `: any`, `as any` in src, scripts | no match |
+| entry test globs (`lib/entries`, `lib/data`, `app/api/entries`, `components/entry-form`) | 36/36 pass (no test files under `src/app/api/entries`; the handler tests are `src/lib/entries/handlers.test.ts`) |
+| curl POST/PUT/DELETE without cookie, valid Origin | 401 / 401 / 401; foreign Origin 403 |
+| Delete cascade | `verify:cleanup -- --snapshot` first (entities 49, relations 0). Stub dry run of `zz-verify-sample-log.txt`: created 9, updated 0, relations 8, skipped 1, no possible duplicate. Stub import: the same. `DELETE /api/entries/<id of meridian-salvage-combine>` (3 relations): 200; relations from/to it afterwards 0; the 3 other endpoints still existed |
+| PUT on a `ZZ-VERIFY` entry with a changed name | 200; returned slug `zz-verify-api-put` unchanged; `slug, legacy_table, legacy_id` before = after (`zz-verify-api-put`, null, null). Also: PUT with a `slug` field 400 `Unknown field: slug`; unknown id 404; id `abc` 404; text/plain 415; after DELETE the entry page answered 404 |
+| Browser, logged in: create, edit, delete `ZZ-VERIFY integration` via the UI | **NOT DONE.** Typing the access code into the login form in the browser pane, and giving the browser a session cookie from a script, were both refused by the session's permission classifier. The same flow ran through the HTTP API with a logged-in script (rows above); logged-in pages are covered only by component tests |
+| `SELECT count(*) FROM entities WHERE name LIKE 'ZZ-VERIFY%'` | 0 after `npm run verify:cleanup` (removed: relations 5, imported entities 8, marked entities 0, import_sources 1, auth_throttle 0). `--compare`: entities 49 with equal md5, relations 0 equal. By `legacy_table`: crew 6, records 35, subsystems 8. `db:verify-legacy`: no differences |
+
+### Browser (one `next dev` on :3000, stopped afterwards; logged out only)
+
+At 1440×900, 844×390 and 390×844 (reload after each resize): `/`, `/search?q=warp`, `/entry/kik`, `/entry/ereshkigal`, `/entry/no-such-entry` (404), `/kodning_weapon_creator`, `/login`, and `/entry/new`, `/entry/kik/edit`, `/import` (each 307 to `/login?next=…`). On every page: `scrollWidth === innerWidth`, exactly one `<main>`, the shell search box never intersects `main`, no element inside `main` overflows it horizontally, and no Add/Import/Edit/Delete/Logout control is rendered. Nav: desktop Weapon creator + Login; landscape left rail Home/Crew/Weapon creator with Login in the right rail; portrait bottom row Crew/Location/Home/Weapon creator/Menu. Clicking "Engineering" on `/entry/kik` opened `/search?q=Engineering`; `/ship_record/1` landed on `/entry/ereshkigal`. Screenshots (logged out): `docs/overhaul/after/step3-*.jpg` (8 files). The Next dev indicator ("N") sits over the portrait nav's first item in dev only. Logged-in visuals of `/entry/new`, `/entry/<slug>/edit`, `/import` and the nav with Add/Import/Logout were **not** checked in a browser.
+
+### Deviations
+
+1. Root `loading.tsx` deleted (above).
+2. Entry handler tests live in `src/lib/entries/handlers.test.ts`, not under `src/app/api/entries/` (same pattern as Import); the route files only bind the factory.
+3. Extra files: `src/lib/entries/limits.ts`, `routes.ts`, `src/components/entry-form/form-state.ts`, `src/components/shell/PageFrame.tsx`. `src/lib/entries/labels.ts` (plan 2.1) not created: `ENTITY_TYPE_LABELS` in `ui/TypeBadge` serves.
+4. Aliases are edited one per line; blank lines and fully blank attribute rows are dropped in the browser; a value without a key or a repeated key is reported before sending.
+5. After Delete the UI navigates to `/` (the deleted slug answers 404).
+
+### Left for verification
+
+- Logged-in browser pass (V2/V3): login, create `ZZ-VERIFY integration`, view, edit, delete, logout; visual check of `/entry/new`, `/entry/<slug>/edit`, `/import` and the logged-in nav at the three sizes.
+- O1 clean-up of test/duplicate legacy records in `entities` after V4 (not done here).
