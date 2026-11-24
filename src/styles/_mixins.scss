@@ -1,4 +1,5 @@
 // Shared mixins. No CSS output here. Viewport and input-capability queries live in _layout.scss.
+@use 'layout' as *;
 
 // The one focus ring used by every control: 2px accent outline, 2px offset.
 @mixin focus-ring($color: var(--accent)) {
@@ -27,6 +28,7 @@
   font-size: $size;
   letter-spacing: 0.04em;
   line-height: var(--lh-tight);
+  text-transform: uppercase; // Hacked-KerX is a caps face; lowercase glyphs are the same shapes
 }
 
 // A region that scrolls on its own inside the grid shell.
@@ -48,4 +50,133 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+// ---- Added by the Design workstream (Step 2) ----
+
+// Data readouts: values, statuses, snippets.
+@mixin mono-text($size: var(--fs-sm)) {
+  font-family: var(--font-mono);
+  font-size: $size;
+  line-height: 1.4;
+}
+
+// Small tracked label in the mono font (the display font is never used below --fs-sm).
+@mixin label-text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+// Strip the native look of a <button> so it can be drawn from scratch.
+@mixin button-reset {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-0);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Thin hard-edged frame of panels and drawers.
+@mixin frame($line: var(--c-line)) {
+  border: var(--bw) solid $line;
+  border-radius: var(--radius-0);
+  background: var(--c-hull);
+}
+
+// The shared frame of text inputs, selects and text areas, with every state (plan 7.5).
+@mixin control-frame {
+  display: block;
+  inline-size: 100%;
+  min-block-size: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--bw) solid var(--c-line-strong);
+  border-radius: var(--radius-0);
+  background-color: var(--c-hull-2);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-base); // at least 16px: no zoom-on-focus on iOS
+  line-height: 1.4;
+  text-align: start;
+  transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+
+  &::placeholder {
+    color: var(--c-text-faint);
+    opacity: 1;
+  }
+
+  @include hover {
+    &:hover:not(:disabled, [aria-invalid='true']) {
+      border-color: var(--c-phosphor-dim);
+    }
+  }
+
+  &:focus-visible {
+    outline: var(--bw-strong) solid var(--accent);
+    outline-offset: 2px;
+    border-color: var(--accent);
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--c-blood);
+    box-shadow: inset 0.25rem 0 0 var(--c-blood-deep);
+  }
+
+  &:disabled {
+    border-style: dashed;
+    border-color: var(--c-text-disabled);
+    background-color: var(--c-hull);
+    color: var(--c-text-disabled);
+    cursor: not-allowed;
+  }
+
+  &:read-only:not(select, :disabled) {
+    border-style: dotted;
+    background-color: var(--c-hull);
+    color: var(--c-text-dim);
+  }
+}
+
+// Long-form text: the legible font at a comfortable size and measure.
+@mixin prose {
+  max-inline-size: var(--measure);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+// A frame with cut corners that does not clip its content (so focus rings stay visible):
+// the line and the fill are two clipped layers behind the content.
+@mixin notched-frame($size: 0.625rem, $line: var(--c-line), $fill: var(--c-hull)) {
+  position: relative;
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    @include notch($size);
+  }
+
+  &::before {
+    inset: 0;
+    background: $line;
+  }
+
+  &::after {
+    inset: var(--bw);
+    background: $fill;
+  }
 }

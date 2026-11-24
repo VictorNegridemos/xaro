@@ -1,0 +1,197 @@
+@use 'index' as *;
+
+// The shell grid (plan 7.4). Base styles (outside any layout mixin) are the portrait column, so a
+// browser that cannot parse range queries still gets a working single-column page.
+// Areas: ship, crew, main, loc, search, nav, railR.
+
+.shell {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'ship'
+    'main'
+    'search'
+    'nav';
+  block-size: 100vh;
+  block-size: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% 0%, color-mix(in srgb, var(--c-phosphor) 4%, transparent), transparent 70%),
+    var(--c-void);
+}
+
+@include desktop {
+  .shell {
+    grid-template-columns: clamp(15rem, 20vw, 20rem) minmax(0, 1fr) clamp(15rem, 20vw, 20rem);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'ship ship ship'
+      'crew main loc'
+      'nav  main loc'
+      'nav  search loc';
+  }
+
+  .crewArea {
+    grid-area: crew;
+    border-inline-end: var(--bw) solid var(--c-line);
+  }
+
+  .locArea {
+    grid-area: loc;
+    border-inline-start: var(--bw) solid var(--c-line);
+  }
+}
+
+@include landscape {
+  .shell {
+    grid-template-columns:
+      calc(3.5rem + env(safe-area-inset-left))
+      minmax(0, 1fr)
+      minmax(10rem, 0.75fr)
+      calc(3.5rem + env(safe-area-inset-right));
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'nav ship search railR'
+      'nav main main   railR';
+  }
+}
+
+// ---- skip link ----
+.skip {
+  @include display-text(var(--fs-sm));
+  position: absolute;
+  inset-block-start: var(--sp-2);
+  inset-inline-start: var(--sp-2);
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--c-phosphor);
+  color: var(--c-on-phosphor);
+  text-decoration: none;
+  transform: translateY(-200%);
+
+  &:focus-visible,
+  &:focus {
+    transform: none;
+    outline: var(--bw-strong) solid var(--c-text);
+    outline-offset: 2px;
+  }
+}
+
+// ---- content: the single page scroll container ----
+.main {
+  grid-area: main;
+  @include scroll-y;
+  position: relative;
+  z-index: var(--z-content);
+  min-inline-size: 0;
+  outline: none;
+  scroll-padding-block: var(--sp-4);
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.frame {
+  min-block-size: 100%;
+  padding: var(--shell-pad) max(var(--shell-pad), 1rem);
+}
+
+@include landscape {
+  .frame {
+    padding-block-end: max(var(--shell-pad), env(safe-area-inset-bottom));
+  }
+}
+
+.flicker {
+  grid-area: main;
+  position: relative;
+  z-index: var(--z-sticky);
+  display: none;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--c-phosphor) 6%, transparent);
+}
+
+@include motion-ok {
+  .flicker {
+    display: block;
+    opacity: 0;
+    animation: xaro-flicker var(--dur-2) var(--ease-flicker) 1;
+  }
+}
+
+.searchFallback {
+  grid-area: search;
+  min-block-size: calc(var(--tap) + var(--sp-4));
+}
+
+// ---- portrait swipe strips in the side gutters of the content ----
+.gutter {
+  display: none;
+}
+
+@include portrait {
+  .gutter {
+    grid-area: main;
+    position: relative;
+    z-index: var(--z-sticky);
+    display: block;
+    inline-size: 1rem;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .gutterLeft {
+    justify-self: start;
+  }
+
+  .gutterRight {
+    justify-self: end;
+  }
+}
+
+// ---- scrim behind an open drawer: a real button that closes it ----
+.scrim {
+  @include button-reset;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-scrim);
+  background: var(--c-scrim);
+  cursor: default;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-3) var(--ease-out), visibility 0s linear var(--dur-3);
+
+  &[data-visible] {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--dur-3) var(--ease-out), visibility 0s linear 0s;
+  }
+
+  &:focus-visible {
+    outline-offset: -4px;
+  }
+}
+
+// The systems sheet sits under the ship bar, so its scrim does too: the tiles stay tappable.
+.scrimUnderBar {
+  z-index: calc(var(--z-bar) - 2);
+}
+
+// ---- atmosphere: scanlines and noise, one fixed non-interactive overlay at 4% (plan 7.6) ----
+.fx {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-fx);
+  pointer-events: none;
+  opacity: 0.04;
+  background-image:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.9) 0 1px, transparent 1px 3px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: auto, 160px 160px;
+  mix-blend-mode: screen;
+}

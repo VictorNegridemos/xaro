@@ -1,0 +1,203 @@
+@use 'index' as *;
+
+// One Button, four variants, every state (plan 7.5).
+// The fill is drawn on clipped layers behind the label, so the focus ring is never clipped.
+.button {
+  --_line: var(--c-line-strong);
+  --_fill: transparent;
+  --_fg: var(--c-text);
+  --_ring: var(--accent);
+
+  @include button-reset;
+  @include display-text(var(--fs-sm));
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-block-size: var(--tap);
+  min-inline-size: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--bw) solid var(--_line);
+  background: var(--_fill);
+  color: var(--_fg);
+  text-align: center;
+  text-decoration: none;
+  text-shadow: none;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out),
+    filter var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+
+  &:focus-visible {
+    outline: var(--bw-strong) solid var(--_ring);
+    outline-offset: 2px;
+  }
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
+.sm {
+  // Still a 44px target; only the padding and the tracking are tighter.
+  padding: var(--sp-1) var(--sp-3);
+  letter-spacing: 0.03em;
+}
+
+.fullWidth {
+  display: flex;
+  inline-size: 100%;
+}
+
+// ---- ghost and icon ----
+.ghost,
+.icon {
+  @include hover {
+    &:hover {
+      --_fill: var(--c-hull-3);
+      --_line: var(--accent);
+      --_fg: var(--accent);
+      text-shadow: none;
+    }
+  }
+
+  &:active {
+    --_fill: var(--c-hull-3);
+    --_line: var(--accent);
+    box-shadow: inset 0 0 0 var(--bw) var(--accent);
+    transform: translateY(1px);
+  }
+
+  &[aria-current='page'] {
+    --_line: var(--accent);
+    --_fg: var(--accent);
+    box-shadow: inset 0 calc(-1 * var(--bw-strong)) 0 var(--accent);
+  }
+}
+
+.icon {
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  padding: 0;
+}
+
+// ---- primary and danger: notched fills ----
+.primary,
+.danger {
+  border-color: transparent;
+  background: none;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    @include notch(0.5rem);
+    transition: background-color var(--dur-1) var(--ease-out);
+  }
+
+  &::before {
+    inset: calc(-1 * var(--bw));
+    background: var(--_line);
+  }
+
+  &::after {
+    inset: 0;
+    background: var(--_fill);
+  }
+
+  &:active {
+    filter: none;
+    transform: translateY(1px);
+  }
+}
+
+.primary {
+  --_line: var(--c-phosphor);
+  --_fill: var(--c-phosphor);
+  --_fg: var(--c-on-phosphor);
+
+  @include hover {
+    &:hover {
+      --_line: color-mix(in srgb, var(--c-phosphor) 80%, white);
+      --_fill: color-mix(in srgb, var(--c-phosphor) 80%, white);
+      filter: drop-shadow(var(--glow-accent));
+      text-shadow: none;
+    }
+  }
+
+  &:active {
+    --_line: var(--c-phosphor-dim);
+    --_fill: color-mix(in srgb, var(--c-phosphor) 82%, black);
+    color: var(--c-on-phosphor);
+  }
+}
+
+.danger {
+  --_line: var(--c-blood);
+  --_fill: var(--c-blood-deep);
+  --_fg: var(--c-on-blood);
+  --_ring: var(--c-on-blood);
+
+  @include hover {
+    &:hover {
+      --_fill: color-mix(in srgb, var(--c-blood-deep) 78%, var(--c-blood));
+      filter: drop-shadow(var(--glow-blood));
+      text-shadow: none;
+    }
+  }
+
+  &:active {
+    --_fill: color-mix(in srgb, var(--c-blood-deep) 75%, black);
+    color: var(--c-on-blood);
+  }
+}
+
+// ---- disabled and pending: the same for every variant ----
+.button:disabled,
+.button[aria-disabled='true'],
+.button[aria-busy='true'] {
+  --_line: var(--c-text-disabled);
+  --_fill: var(--c-hull-2);
+  --_fg: var(--c-text-disabled);
+
+  border: var(--bw) dashed var(--_line);
+  background: var(--_fill);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+  cursor: not-allowed;
+
+  &::before,
+  &::after {
+    content: none;
+  }
+}
+
+// A pending link cannot be disabled natively: it stops reacting to the pointer and leaves the tab order.
+a.button[aria-busy='true'],
+a.button[aria-disabled='true'] {
+  pointer-events: none;
+}
+
+.button[aria-busy='true'] {
+  --_fg: var(--c-text-dim);
+  cursor: progress;
+}
+
+// Pending icon button: the spinner replaces the icon.
+.icon[aria-busy='true'] .label {
+  display: none;
+}

@@ -1,0 +1,46 @@
+@use 'index' as *;
+
+.fault {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-content: center;
+  gap: var(--sp-4);
+  min-block-size: 100%;
+  padding-block: var(--sp-6);
+}
+
+.tendrils {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  z-index: -1;
+  inline-size: 100%;
+  max-inline-size: 48rem;
+  block-size: auto;
+  margin-inline: auto;
+  opacity: 0.22;
+  pointer-events: none;
+  // Behind the text, never over it (plan 7.2).
+  filter: grayscale(1) brightness(0.7) sepia(1) hue-rotate(310deg) saturate(3);
+  mix-blend-mode: screen;
+}
+
+.code {
+  @include display-text(var(--fs-2xl));
+  justify-self: center;
+  color: var(--c-blood);
+  letter-spacing: 0.2em;
+  text-shadow: var(--glow-blood);
+}
+
+@include motion-ok {
+  .code {
+    animation: xaro-glitch-in var(--dur-4) var(--ease-flicker) 1;
+  }
+}
+
+.content {
+  position: relative;
+  background: color-mix(in srgb, var(--c-void) 82%, transparent);
+}

@@ -1,5 +1,6 @@
-// STUB created by Foundation (Step 1): unstyled; props are final (plan 7.5).
 import type React from 'react'
+import { cx } from './cx'
+import styles from './surfaces.module.scss'
 
 export interface StateBlockProps {
   kind: 'empty' | 'loading' | 'error' | 'denied'
@@ -11,19 +12,37 @@ export interface StateBlockProps {
   className?: string
 }
 
+type Kind = StateBlockProps['kind']
+
+const KIND_CLASS: Readonly<Record<Kind, string | undefined>> = {
+  empty: styles.stateEmpty,
+  loading: styles.stateLoading,
+  error: styles.stateError,
+  denied: styles.stateDenied,
+}
+
+// A text marker per kind, so the state is never carried by colour alone.
+const KIND_TAG: Readonly<Record<Kind, string>> = {
+  empty: '[ -- ]',
+  loading: '[ .. ]',
+  error: '[ !! ]',
+  denied: '[ XX ]',
+}
+
 /** The one pattern for empty, loading, error and access-denied states. */
 export function StateBlock({ kind, title, children, action, className }: StateBlockProps): React.JSX.Element {
   return (
     <div
-      className={className}
+      className={cx(styles.state, KIND_CLASS[kind], className)}
       data-state-block=""
       data-kind={kind}
       role={kind === 'error' ? 'alert' : 'status'}
       aria-busy={kind === 'loading' || undefined}
     >
-      <p data-state-title="">{title}</p>
-      {children ? <div data-state-body="">{children}</div> : null}
-      {action ? <div data-state-action="">{action}</div> : null}
+      <span className={styles.stateTag} aria-hidden="true">{KIND_TAG[kind]}</span>
+      <p className={styles.stateTitle} data-state-title="">{title}</p>
+      {children ? <div className={styles.stateBody} data-state-body="">{children}</div> : null}
+      {action ? <div className={styles.stateAction} data-state-action="">{action}</div> : null}
     </div>
   )
 }

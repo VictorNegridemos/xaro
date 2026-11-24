@@ -1,4 +1,5 @@
 // The only global stylesheet: reset, :root custom properties, base elements, reduced motion (plan 7.1).
+// @media may appear here and in src/styles/ only; component modules use the layout mixins.
 @use 'index' as *;
 
 :root {
@@ -12,6 +13,8 @@
   box-sizing: border-box;
 }
 
+// The shell is a 100dvh grid whose regions scroll on their own (plan 7.4). There is deliberately
+// no overflow: hidden and no touch-action on html or body: pinch zoom and touch scrolling work.
 html,
 body {
   height: 100%;
@@ -20,6 +23,9 @@ body {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--c-void);
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line-strong) var(--c-void);
 }
 
 body {
@@ -29,6 +35,9 @@ body {
   font-family: var(--font-body);
   font-size: var(--fs-base);
   line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1,
@@ -43,6 +52,23 @@ dd,
 figure {
   margin: 0;
 }
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+h4 { font-size: var(--fs-sm); }
 
 img,
 svg,
@@ -59,13 +85,49 @@ textarea {
   color: inherit;
 }
 
-a {
-  color: var(--accent);
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9375em;
 }
 
+a {
+  color: var(--accent);
+  text-decoration-color: var(--c-phosphor-dim);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: color var(--dur-1) var(--ease-out), text-decoration-color var(--dur-1) var(--ease-out);
+
+  &:active {
+    color: var(--c-text);
+  }
+}
+
+@include hover {
+  a:hover {
+    text-decoration-color: currentcolor;
+    text-shadow: var(--glow-accent);
+  }
+}
+
+hr {
+  block-size: 0;
+  margin: var(--sp-4) 0;
+  border: 0;
+  border-block-start: var(--bw) solid var(--c-line);
+}
+
+// The one focus ring: 2px accent outline, 2px offset, on every focusable element.
 :focus-visible {
   outline: var(--bw-strong) solid var(--accent);
   outline-offset: 2px;
+}
+
+// Programmatic focus targets (drawer headings, main) do not draw a ring.
+[tabindex='-1']:focus {
+  outline: none;
 }
 
 ::selection {
@@ -74,8 +136,62 @@ a {
 }
 
 mark {
+  padding: 0 0.15em;
   background: var(--c-mark-bg);
   color: var(--c-text);
+  box-shadow: inset 0 -0.125em 0 var(--c-phosphor-dim);
+}
+
+// Thin themed scrollbars for every scroll container (WebKit fallback for older Safari).
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--c-line-strong);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// Decorative keyframes used by modules. Only `opacity` and `transform` are animated (plan 7.7),
+// and modules reference them only inside the motion-ok mixin.
+@keyframes xaro-flicker {
+  0% { opacity: 0.55; }
+  35% { opacity: 0.1; }
+  60% { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+
+@keyframes xaro-spin {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes xaro-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.25; }
+}
+
+@keyframes xaro-noise-flash {
+  0%, 97.4%, 100% { opacity: 0; transform: translate3d(0, 0, 0); }
+  97.6% { opacity: 0.5; transform: translate3d(-1%, 0.5%, 0); }
+  98.2% { opacity: 0.2; transform: translate3d(1%, -0.5%, 0); }
+  98.8% { opacity: 0.45; transform: translate3d(0, 1%, 0); }
+  99.4% { opacity: 0.1; transform: translate3d(0.5%, 0, 0); }
+}
+
+@keyframes xaro-glitch-in {
+  0% { opacity: 0; transform: translate3d(-0.375rem, 0, 0); }
+  40% { opacity: 1; transform: translate3d(0.125rem, 0, 0); }
+  70% { opacity: 0.7; transform: translate3d(-0.0625rem, 0, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @include reduced-motion {
@@ -85,6 +201,7 @@ mark {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }

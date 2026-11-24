@@ -1,5 +1,6 @@
-// STUB created by Foundation (Step 1): working and unstyled; props are final (plan 7.5).
 import type React from 'react'
+import styles from './controls.module.scss'
+import { cx } from './cx'
 
 export interface FieldProps {
   /** Always visible. */
@@ -23,14 +24,18 @@ export function fieldDescribedBy(htmlFor: string, parts: { hint?: boolean; error
 export function Field({ label, htmlFor, hint, error, required, className, children }: FieldProps): React.JSX.Element {
   const hasError = error !== undefined && error !== null && error !== false && error !== ''
   return (
-    <div className={className} data-field="" data-invalid={hasError ? '' : undefined}>
-      <label htmlFor={htmlFor}>
+    <div
+      className={cx(styles.field, hasError && styles.fieldInvalid, className)}
+      data-field=""
+      data-invalid={hasError ? '' : undefined}
+    >
+      <label htmlFor={htmlFor} className={styles.fieldLabel}>
         {label}
-        {required ? <span aria-hidden="true"> *</span> : null}
+        {required ? <span aria-hidden="true" className={styles.required}> *</span> : null}
       </label>
       {children}
-      {hint ? <p id={`${htmlFor}-hint`} data-field-hint="">{hint}</p> : null}
-      {hasError ? <p id={`${htmlFor}-error`} role="alert" data-field-error="">{error}</p> : null}
+      {hint ? <p id={`${htmlFor}-hint`} className={styles.hint} data-field-hint="">{hint}</p> : null}
+      {hasError ? <p id={`${htmlFor}-error`} role="alert" className={styles.error} data-field-error="">{error}</p> : null}
     </div>
   )
 }

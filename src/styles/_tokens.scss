@@ -23,6 +23,10 @@ $color-tokens: (
   'c-on-blood': #ffecea,       // text on a danger fill
   'c-blood-wash': #2a0a0e,     // Devouring surface tint
   'accent': var(--c-phosphor), // the current accent; components use this, not the raw colour
+  // Added by the Design workstream (Step 2). Used sparingly: badge tones and the drawer scrim.
+  'c-amber': #e8c15a,          // 'warn' badge tone (13.0:1 on hull)
+  'c-ice': #8fc7d6,            // 'info' badge tone (10.6:1 on hull)
+  'c-scrim': rgb(2 4 3 / 0.72), // behind an open drawer
 );
 
 // Weapon creator only: the value of --wc-accent per weapon type.
@@ -41,10 +45,10 @@ $weapon-accents: (
 );
 
 $type-tokens: (
-  // The Design workstream points these at next/font variables; the stacks below are fallbacks.
-  'font-display': (ui-monospace, monospace),
-  'font-body': (system-ui, -apple-system, 'Segoe UI', sans-serif),
-  'font-mono': (ui-monospace, 'Cascadia Mono', Consolas, monospace),
+  // --font-hacked, --font-plex-sans and --font-plex-mono are set on <html> by next/font (src/fonts/index.ts).
+  'font-display': (var(--font-hacked), ui-monospace, monospace),
+  'font-body': (var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif),
+  'font-mono': (var(--font-plex-mono), ui-monospace, 'Cascadia Mono', Consolas, monospace),
   'fs-xs': 0.8125rem,
   'fs-sm': clamp(0.875rem, 0.84rem + 0.15vw, 0.9375rem),
   'fs-base': clamp(1rem, 0.96rem + 0.2vw, 1.125rem),
@@ -67,6 +71,8 @@ $space-tokens: (
   'sp-7': 3rem,
   'sp-8': 4rem,
   'tap': 2.75rem, // 44px: minimum block size of every control
+  // Added by the Design workstream: the gutter of the content column and of panels.
+  'shell-pad': clamp(0.75rem, 0.4rem + 1.6vw, 1.5rem),
 );
 
 $shape-tokens: (

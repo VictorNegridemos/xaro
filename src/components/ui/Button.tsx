@@ -1,7 +1,9 @@
-// STUB created by Foundation (Step 1): working and unstyled. The props are final (plan 7.5);
-// the Design workstream adds styles and states without changing them.
+// The one Button (plan 7.5): variants primary, ghost, danger and icon, with rest, hover, active,
+// focus-visible, disabled and pending states. The props are Foundation's and are final.
 import Link from 'next/link'
 import type React from 'react'
+import styles from './Button.module.scss'
+import { cx } from './cx'
 import { Spinner } from './Spinner'
 
 export type ButtonVariant = 'primary' | 'ghost' | 'danger' | 'icon'
@@ -31,6 +33,13 @@ export type ButtonProps = ButtonAsButton | ButtonAsLink
 /** A real <button type="button"> by default, or a next/link when href is given. Never <a href="#">. */
 export function Button(props: ButtonProps): React.JSX.Element {
   const { variant = 'ghost', size = 'md', pending = false, fullWidth = false, className, children } = props
+  const classes = cx(
+    styles.button,
+    styles[variant],
+    size === 'sm' && styles.sm,
+    fullWidth && styles.fullWidth,
+    className,
+  )
   const data = {
     'data-variant': variant,
     'data-size': size,
@@ -40,7 +49,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
   const content = (
     <>
       {pending ? <Spinner /> : null}
-      {children}
+      <span className={styles.label}>{children}</span>
     </>
   )
 
@@ -54,7 +63,8 @@ export function Button(props: ButtonProps): React.JSX.Element {
         aria-current={props['aria-current']}
         aria-label={props['aria-label']}
         aria-busy={pending || undefined}
-        className={className}
+        tabIndex={pending ? -1 : undefined}
+        className={classes}
         {...data}
       >
         {content}
@@ -68,7 +78,7 @@ export function Button(props: ButtonProps): React.JSX.Element {
   } = props
   void [_variant, _size, _pending, _fullWidth, _className, _children, _href]
   return (
-    <button type={type} disabled={disabled || pending} aria-busy={pending || undefined} className={className} {...data} {...rest}>
+    <button type={type} disabled={disabled || pending} aria-busy={pending || undefined} className={classes} {...data} {...rest}>
       {content}
     </button>
   )

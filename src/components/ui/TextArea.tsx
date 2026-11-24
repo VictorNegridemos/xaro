@@ -1,5 +1,6 @@
-// STUB created by Foundation (Step 1): working and unstyled; props are final (plan 7.5).
 import type React from 'react'
+import styles from './controls.module.scss'
+import { cx } from './cx'
 
 export type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   /** Sets aria-invalid; the error text itself is rendered by <Field>. */
@@ -7,6 +8,7 @@ export type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & 
   ref?: React.Ref<HTMLTextAreaElement>
 }
 
-export function TextArea({ invalid, ...rest }: TextAreaProps): React.JSX.Element {
-  return <textarea aria-invalid={invalid || undefined} {...rest} />
+/** Resizes vertically only. */
+export function TextArea({ invalid, className, ...rest }: TextAreaProps): React.JSX.Element {
+  return <textarea aria-invalid={invalid || undefined} className={cx(styles.textarea, className)} {...rest} />
 }

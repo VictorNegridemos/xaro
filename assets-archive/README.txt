@@ -1,0 +1,1 @@
+Not deployed. Archived by the overhaul ([O2], no star map): the galaxy map images from public/ and the eight files of the former src/icons/ (icons/; icons/galaxy_map.jpg is a byte-identical copy of galaxy_map.jpg). They remain in git history.

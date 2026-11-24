@@ -1,0 +1,126 @@
+@use 'index' as *;
+
+// The shell search box: its own grid cell in every layout (plan 7.4).
+
+.region {
+  grid-area: search;
+  position: relative;
+  z-index: var(--z-sticky);
+  min-inline-size: 0;
+  padding: var(--sp-2) var(--sp-2);
+  border-block-start: var(--bw) solid var(--c-line);
+  background: var(--c-hull);
+}
+
+.form {
+  --_frame: var(--c-line-strong);
+
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  max-inline-size: 44rem;
+  margin-inline: auto;
+  border: var(--bw) solid var(--_frame);
+  background: var(--c-hull-2);
+  transition: border-color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+
+  @include hover {
+    &:hover {
+      --_frame: var(--c-phosphor-dim);
+    }
+  }
+
+  &:focus-within {
+    --_frame: var(--accent);
+    box-shadow: var(--glow-accent);
+  }
+}
+
+.prompt {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding-inline: var(--sp-3) 0;
+  color: var(--c-phosphor);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+@include motion-ok {
+  .form:focus-within .prompt {
+    animation: xaro-blink 1s var(--ease-flicker) infinite;
+  }
+}
+
+.input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-block-size: var(--tap);
+  padding: var(--sp-2) var(--sp-2);
+  border: 0;
+  background: transparent;
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-base); // at least 16px: no zoom-on-focus on iOS
+  appearance: none;
+
+  &::placeholder {
+    color: var(--c-text-faint);
+    opacity: 1;
+  }
+
+  // The ring is drawn on the frame (:focus-within); the field itself keeps a visible ring too.
+  &:focus-visible {
+    outline: var(--bw-strong) solid var(--accent);
+    outline-offset: -3px;
+  }
+
+  &::-webkit-search-cancel-button {
+    filter: grayscale(1) brightness(1.6);
+    cursor: pointer;
+  }
+}
+
+.submit {
+  @include button-reset;
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap);
+  min-block-size: var(--tap);
+  border-inline-start: var(--bw) solid var(--c-line);
+  color: var(--c-text-dim);
+  transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+
+  @include hover {
+    &:hover {
+      background: var(--c-hull-3);
+      color: var(--accent);
+    }
+  }
+
+  &:active {
+    background: var(--c-phosphor);
+    color: var(--c-on-phosphor);
+  }
+
+  &:focus-visible {
+    outline-offset: -3px;
+  }
+}
+
+@include desktop {
+  .region {
+    padding: var(--sp-3) var(--shell-pad);
+  }
+}
+
+@include landscape {
+  .region {
+    display: flex;
+    align-items: center;
+    padding: var(--sp-1) var(--sp-2);
+    border-block-start: 0;
+    border-block-end: var(--bw) solid var(--c-line);
+  }
+}
