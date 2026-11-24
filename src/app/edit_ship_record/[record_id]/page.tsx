@@ -1,19 +1,11 @@
-import { notFound } from "next/navigation";
+// Legacy URL (plan 2.2): 308 to the entry copied from the legacy row, 404 when there is none.
+import { notFound, permanentRedirect } from 'next/navigation'
+import { LEGACY_KEYS } from '@/lib/data/legacy-keys'
+import { legacyEntryPath } from '@/lib/search/legacy-redirect'
 
-import { LEGACY_KEYS } from "@/lib/data/legacy-keys";
-
-import { getLegacyRow } from "@/components/legacy/adapters";
-import Main from "@/components/legacy/Main/Main";
-import ShipRecordCreator from "@/components/legacy/ShipRecordCreator/ShipRecordCreator";
-
-export default async function EditShipRecord({ params }: PageProps<'/edit_ship_record/[record_id]'>) {
-    const record_info = await params;
-    const data = await getLegacyRow(LEGACY_KEYS.record, record_info.record_id);
-    if (!data || !('title' in data)) notFound();
-
-    return (
-        <Main>
-            <ShipRecordCreator predefinedData={data}/>
-        </Main>
-    );
+export default async function LegacyRedirectPage({ params }: PageProps<'/edit_ship_record/[record_id]'>): Promise<never> {
+  const { record_id } = await params
+  const path = await legacyEntryPath(LEGACY_KEYS.record, record_id)
+  if (path === null) notFound()
+  permanentRedirect(`${path}/edit`)
 }

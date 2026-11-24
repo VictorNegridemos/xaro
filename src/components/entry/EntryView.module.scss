@@ -1,0 +1,177 @@
+@use 'index' as *;
+
+// Minimal page frame; Step 3 puts the page into the shell and its Panel frames.
+.page {
+  inline-size: 100%;
+  max-inline-size: calc(var(--measure) + 2 * var(--sp-4));
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-4);
+}
+
+.entry {
+  display: grid;
+  gap: var(--sp-5);
+  inline-size: 100%;
+  max-inline-size: var(--measure);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.header {
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: start;
+}
+
+.name {
+  @include display-text(var(--fs-xl));
+  margin: 0;
+  color: var(--accent);
+}
+
+.aliases {
+  margin: 0;
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+}
+
+.label {
+  @include display-text(var(--fs-xs));
+  color: var(--c-text-faint);
+  text-transform: uppercase;
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+}
+
+.sectionTitle {
+  @include display-text(var(--fs-sm));
+  margin: 0 0 var(--sp-2);
+  color: var(--c-text-dim);
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.attributes {
+  inline-size: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: var(--sp-2) var(--sp-3);
+    border-block-end: var(--bw) solid var(--c-line);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  th {
+    inline-size: 35%;
+    color: var(--c-text-dim);
+    font-size: var(--fs-sm);
+    font-weight: 400;
+  }
+}
+
+.body {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  white-space: pre-line;
+}
+
+// A word that searches for itself. It reads as text; the link shows on hover and focus.
+.word {
+  @include focus-ring;
+  color: inherit;
+  text-decoration: underline dotted var(--c-line-strong);
+  text-underline-offset: 0.2em;
+
+  @include hover {
+    &:hover {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+    }
+  }
+}
+
+.relations {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.relationGroup {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.relationKind {
+  margin: 0;
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+}
+
+.relationItems {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.relationLink {
+  @include focus-ring;
+  @include tap-target;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--bw) solid var(--c-line);
+  color: var(--c-text);
+  text-decoration: none;
+
+  @include hover {
+    &:hover {
+      border-color: var(--accent);
+      background: var(--c-hull-3);
+    }
+  }
+}
+
+.relationName {
+  color: var(--accent);
+}
+
+.relationDirection {
+  margin-inline-start: auto;
+  color: var(--c-text-faint);
+  font-size: var(--fs-xs);
+}
+
+.relationNote {
+  margin: var(--sp-1) 0 0;
+  padding-inline: var(--sp-3);
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+}
+
+.meta {
+  display: grid;
+  gap: var(--sp-1);
+  color: var(--c-text-faint);
+  font-size: var(--fs-sm);
+
+  p {
+    margin: 0;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}

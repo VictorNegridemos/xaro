@@ -1,19 +1,11 @@
-import { notFound } from "next/navigation";
+// Legacy URL (plan 2.2): 308 to the entry copied from the legacy row, 404 when there is none.
+import { notFound, permanentRedirect } from 'next/navigation'
+import { LEGACY_KEYS } from '@/lib/data/legacy-keys'
+import { legacyEntryPath } from '@/lib/search/legacy-redirect'
 
-import { LEGACY_KEYS } from "@/lib/data/legacy-keys";
-
-import { getLegacyRow } from "@/components/legacy/adapters";
-import Main from "@/components/legacy/Main/Main";
-import SearchResult from "@/components/legacy/SearchResult/SearchResult";
-
-export default async function CrewMemberDisplay({ params }: PageProps<'/crew_member/[crew_member_id]'>) {
-    const data_info = await params;
-    const data = await getLegacyRow(LEGACY_KEYS.crew, data_info.crew_member_id);
-    if (!data) notFound();
-
-    return (
-        <Main>
-            <SearchResult data={data} editable={false}/>
-        </Main>
-    );
+export default async function LegacyRedirectPage({ params }: PageProps<'/crew_member/[crew_member_id]'>): Promise<never> {
+  const { crew_member_id } = await params
+  const path = await legacyEntryPath(LEGACY_KEYS.crew, crew_member_id)
+  if (path === null) notFound()
+  permanentRedirect(`${path}`)
 }
