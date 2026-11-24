@@ -1,0 +1,22 @@
+SALVAGE LOG — SURVEY TENDER YMIR-9
+Recovered from the tender's flight recorder. Transcribed by the boarding team.
+
+The Ymir-9 was found drifting inside the Kessler Drift, a dense field of shattered ice and hull debris on the outer edge of the Tamsin reach. Her running lights were dark and her reactor had been cold for at least eleven days. The Kessler Drift is known to scramble long-range scans, which is why no rescue beacon was ever picked up. Every object in the field turns slowly, and the debris sings faintly on open channels when the tender's hull is struck.
+
+Dr. Halvard Quist, the expedition's chief archivist, was the last person aboard to keep a log. The crew called him the Archivist. He was a member of the Meridian Salvage Combine, the corporate outfit that owned the Ymir-9 and paid for the survey. Quist recorded everything on a battered hand-held unit, Quist's recorder, which he built himself from spare navigation parts. The recorder still holds forty hours of audio, most of it whispered.
+
+Sergeant Odalys Brann commanded the tender's security detail. She was also a member of the Meridian Salvage Combine, on loan from its private guard. Her last entries describe sealing the lower decks and rationing oxygen. Brann distrusted the lattice core from the first day and asked twice for it to be jettisoned.
+
+The lattice core is an experimental power source recovered from the Kessler Drift itself. It is a lattice of grown crystal that hums at a pitch just below hearing. According to Quist, it was created by the Pale Chorus, not by any human foundry. Combine engineers fitted it to the Ymir-9 to replace the failing reactor.
+
+The Pale Chorus is the name Quist gave to the things in the drift. They appear only as pale shapes at the edge of camera feeds, and they are heard rather than seen: a layered, wordless singing that grows louder near the lattice core. Brann reported that two of her guards walked out of an airlock while humming the same tune.
+
+The Kessler blackout is the event that ended the survey. On the ninth day every system on the Ymir-9 failed at once, the lattice core went silent, and the singing stopped. The blackout took place inside the Kessler Drift and lasted six hours. When power came back, nine of the fourteen crew were gone.
+
+Items recovered by the boarding team:
+
+- Quist's recorder, intact, battery at four percent.
+- Two security sidearms registered to the Meridian Salvage Combine.
+- One fragment of the lattice core, inert, sealed in a lead case.
+
+Recommendation: the Kessler Drift should be marked as a no-transit zone. Do not attempt to recover the rest of the lattice core.

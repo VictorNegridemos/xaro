@@ -1,0 +1,16 @@
+@use 'index' as *;
+
+// Minimal page frame; Step 3 puts the page into the shell.
+.page {
+  inline-size: 100%;
+  max-inline-size: 52rem;
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-4);
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.title {
+  @include display-text(var(--fs-lg));
+  color: var(--accent);
+}

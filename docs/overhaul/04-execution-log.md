@@ -104,3 +104,162 @@ Frozen in Step 2 (final implementations): `src/lib/data/**`, `src/lib/db/**`, `s
 ### Final gate
 
 After `npm ci` from the committed lockfile (exit 0, 376 packages): `npm run typecheck` 0, `npm run lint` 0, `npm test` 0 (43/43), `npm run build` 0 (`Next.js 16.4.6 (Turbopack)`, all routes dynamic). `npm audit` reports 4 moderate findings, all the same dev-only advisory (esbuild <= 0.24.2 inside `@esbuild-kit/*`, a dependency of the pinned `drizzle-kit` 0.31.11); nothing of it is deployed. Not changed.
+
+## Step 2 — B. Search
+
+Agent: Search take-over (the previous agent stopped part-way; its draft was reviewed and kept where correct). No commit, no DB write, no schema change.
+
+### Files (all inside the B ownership globs)
+
+- Kept from the draft after review: `src/lib/search/{schema,query,sql,highlight,href,legacy-redirect,eval-cases}.ts`, `src/app/api/search/route.ts` (GET only; legacy POST removed), the five legacy redirect pages, `src/components/entry/{EntryView,AttributeTable,RelationList,InteractiveText,BackButton}.tsx`, `interactive-text.ts`, `EntryView.module.scss` (added `.page`), `scripts/search-eval.ts`.
+- Added: `src/lib/search/{sql,query,highlight}.test.ts`, `src/components/entry/interactive-text.test.ts`, `src/components/search/{SearchResults,ResultItem,TypeFilter,Pagination}.tsx`, `search-text.ts` (+ `.test.ts`), `SearchResults.module.scss`, `src/app/search/{page,loading}.tsx`, `src/app/entry/[slug]/{page,not-found}.tsx`.
+
+### Notes
+
+- `sql.ts` holds the 4.2 statement verbatim; `sql.test.ts` asserts it equals `scripts/sql/search-smoke.sql` (CRLF-normalised) and that every value is a bound parameter (`bindSql` turns `$n` into Drizzle params; nothing is interpolated).
+- Leading minus (review finding 4): `normalizeQuery` drops leading `-` and minus-only tokens before binding; `-warp` returns exactly the ids of `warp`; `--`/`-` alone is an empty query and touches no table (unit test with a throwing DB double).
+- Snippets: `ts_headline` with U+0001/U+0002 markers → `parseHeadline` → `{t,h}` segments → `<Highlight>` (text nodes + `<mark>`). No `dangerouslySetInnerHTML` anywhere in `src`.
+- `total` comes from the facet query (eval case 34 passes).
+- **Search weights: unchanged** (1.00 fts, 0.50 pfx, 0.90 trgm, 1.50 exact, 0.40 name_prefix); all cases pass without tuning.
+- `/search`: GET form at the top (works without JS), count line in a polite live region, type chips with `aria-current="page"`, `<ol>` of ≥56 px links, Previous/Next, empty state with "did you mean" links, end-of-pages state, input-error and DB-error states in the ship's voice; `loading.tsx` skeleton (animation only under `motion-ok`).
+- `/entry/[slug]`: slugs not matching the DB check format give 404 without a query; `React.cache` dedupes the lookup between `generateMetadata` and the page; Edit link only when `isLoggedIn()`; slot `{/* entry actions: Step 3 adds Delete */}` in `EntryView` (prop `actions`, rendered only when `canEdit`).
+
+### Acceptance checks (actual results)
+
+| Check | Result |
+|---|---|
+| `node --import tsx --test` (lib/search, components/entry, components/search) | 27/27 pass |
+| `npm run search:eval` (read-only transaction) | **34 passed, 0 failed, 0 skipped** of 34 |
+| `GET /api/search?q=Ereshkigl` | 200, `Cache-Control: no-store`, first slug `ereshkigal`, snippet is an array of `{t,h}` |
+| `?q=x&type=nonsense` / 201 chars | 400 `invalid_type` / 400 `query_too_long` |
+| `/ship_record/1`, `/crew_member/5`, `/subsystem/7`, `/edit_ship_record/1`, `/add_ship_record` | 308 to `/entry/ereshkigal`, `/entry/kal-o-dun`, `/entry/warp-drone-matrix`, `/entry/ereshkigal/edit`, `/entry/new` |
+| `/ship_record/abc`, `/ship_record/999999` | 404 (notFound) |
+| `grep -rn dangerouslySetInnerHTML src` | no match |
+| `tsc --noEmit` (whole repo at the time) / eslint on B files | 0 errors / clean |
+
+The HTTP checks were run by calling the route handler and the page functions directly with tsx against the DB (read-only), because the shared dev server (port 3101, another stream's) returned 500 for every route: `src/styles/_mixins.scss` (Design) included an undefined `hover` mixin at the time, and port 3102 could not start a second `next dev` in the same tree. The `/search` page and `EntryView` were also rendered to static HTML with a stubbed SCSS import and checked (chips, counts, `<mark>`, empty/past-the-end/error states, Edit link only with `canEdit`). A real browser check of these pages is left to Step 3 / V2.
+
+### Open items for Step 3
+
+- Shell search box should submit `GET /search?q=` (Design). The parked `src/components/legacy/Form/Form.tsx` still POSTs to `/api/search`, which now answers 405; it is deleted in Step 3 with the legacy folder (`legacySearch` in `legacy/adapters.ts` then becomes unused).
+- Put `/search` and `/entry/[slug]` into the shell/Panel frames; add Delete through `EntryView`'s `actions` prop.
+
+## Step 2 — A. Auth (2026-11-24)
+
+Agent: Auth take-over (the first Auth agent was cut off; its draft was kept where correct). Nothing committed; the orchestrator commits.
+
+### State found and what was changed
+- Draft present for every file of plan 5.1 plus `src/lib/auth/{env-file,login-handler,session-options}.ts` and `src/components/auth/messages.ts` (+ tests). `.env.local` and `.secrets/` did NOT exist yet (no password had been generated).
+- Fixed `src/lib/auth/origin.ts`: `value.includes('\')` was an unterminated string literal (the file did not parse, so every auth module failed to load); now `'\'`. Removed a now-unused eslint-disable.
+- `scripts/set-password.ts`: the draft's `--env-file` flag is swallowed by Node itself (`node --import tsx script --env-file X` makes Node try to load X and exit 9), so the two script tests failed. Renamed to `--env-path`. With `--generate --out`, the password file is now written BEFORE the hash, so a failure cannot leave a hash whose password is lost. The "refuses bad flags" test now asserts the script's own error text (it passed vacuously before).
+- Added `src/lib/auth/proxy.test.ts` (matcher; logged out / tampered / old `pw` / no `pw` redirect to `/login?next=…`; valid session passes; missing secret never passes).
+- `nextProxyCookies(request, response)` confirmed as an export of the installed iron-session 9.1.1 (README "Runtimes" table, `dist/index.d.ts`); proxy runs on the Node runtime in Next 16 (`node_modules/next/dist/docs/.../proxy.md`, "Runtime").
+
+### Task 8
+`npm run set-password -- --generate --out .secrets/initial-password.txt` run once. `.env.local` holds exactly `AUTH_PASSWORD_HASH` (format `scrypt:32768:8:1:<32 hex>:<128 hex>`, no `$`) and `SESSION_SECRET` (64 hex); the stored hash verifies the stored password (checked by script, nothing printed). `git status --ignored` lists both as ignored (`!!`), neither as untracked.
+
+### Acceptance checks (plan 9.2 A)
+| Check | Result |
+|---|---|
+| `node --import tsx --test "src/lib/auth/**/*.test.ts" scripts/set-password.test.ts` (+ `src/components/auth/messages.test.ts`) | 42/42 pass |
+| `npx eslint src/lib/auth src/app/login src/app/api/auth src/components/auth src/proxy.ts scripts/set-password.ts scripts/set-password.test.ts` | clean (exit 0) |
+| `npx tsc --noEmit`, filtered to Auth paths | no errors in Auth files |
+| Wrong password ×7 with `X-Forwarded-For: 203.0.113.77` (own dev server, port 3101 per the brief) | 401 ×5, then 429 with `Retry-After: 899` ×2 |
+| 3,000-byte password (fresh XFF) | 413 `payload_too_large`; `auth_throttle` count unchanged (1 → 1) |
+| No `Origin` / foreign `Origin` | 403 `bad_origin` (login and logout) |
+| Login with the generated password (read from the file, never echoed; XFF 203.0.113.80) | 200; `Set-Cookie: xaro_session=…; Path=/; Max-Age=2591940; HttpOnly; SameSite=lax`, no `Secure` on http://localhost; bucket row removed on success |
+| Proxy | `/import`, `/entry/kik/edit` without cookie → 307 `/login?next=%2Fimport` etc.; with cookie → passes; after logout → 307 again |
+| `/login` while logged in | redirects to safe `next` (`/search`); `//evil.example` and `/\evil.example` → `/`. Because the root `src/app/loading.tsx` (Design) wraps the page in Suspense, the redirect is streamed (HTTP 200 + `NEXT_REDIRECT;replace;…;307` / meta refresh), not a 307 status |
+| Logout | 200, cookie cleared (`Max-Age=0`) |
+| Fail-closed with `SESSION_SECRET`, then `AUTH_PASSWORD_HASH`, deleted (unit tests) | config `ok:false` / `isLoggedIn` false / `requireApiAuth` 401 / login 503 |
+| `git grep -n "\$" -- .env.example` | no match |
+| Throttle clean-up | only the rows of this check's four XFF buckets deleted (targeted `DELETE … WHERE bucket = ANY(…)`, not the global `--throttle`, so other agents' rows were not touched); `auth_throttle` now 0 rows |
+
+### Notes and open items
+- While the dev server ran, pages briefly returned 500 because of a half-written `src/styles/_mixins.scss` (`hover` mixin undefined; Design stream); the checks were repeated after it compiled.
+- `next dev` generated an untracked `AGENTS.md` at the repo root; it was deleted (any `next dev` will recreate it unless `agentRules: false` is set in `next.config.ts` — orchestrator's call).
+- `tests/repo-guards.test.ts` test 3 currently fails on `src/lib/import/test-fixtures.ts` (Import stream), not on an Auth file.
+- No mutating route other than login/logout exists yet; Step 3 / Import must put `requireApiAuth(request)` as the first line of `POST /api/entries`, `PUT`/`DELETE /api/entries/[id]`, `POST /api/import`, `DELETE /api/import/[id]`, and call `requirePageAuth()` in `/import`, `/entry/new`, `/entry/[slug]/edit`.
+- Step 3: render `<LogoutButton />` in the shell nav only when logged in; put `/login` into the shell/Panel frame.
+
+## Step 2 — E. Weapon creator (2026-11-24)
+
+Took over the previous agent's uncommitted draft. Kept after review: `src/lib/weapon/{data,derive,reducer,selectors,golden-fixture}.ts`, `golden.test.ts`, `src/components/weapon/{ReadoutLines,WeaponControls,WeaponReadout,WeaponSchematic,WeaponCreator}.tsx`, `readout.test.tsx`, `src/app/kodning_weapon_creator/page.tsx`. Added `src/components/weapon/weapon.module.scss` (missing; the page could not compile without it) and small component edits (pulse/scan/type-sweep decoration, input-matrix header, captions, `sealedSelect` class, eager tendril image, Panel tone `default`/`danger`).
+
+**Logic check.** `data.ts` diffed against `git show 7b0afe7:…/WeaponCreator.js` lines 231–end: identical except `export`, `as const` and dropped trailing semicolons (no literal changed). `derive.ts` and `reducer.ts` read branch by branch against the original handlers: same conditions and order.
+
+**Golden results** (`node --import tsx --test src/lib/weapon/golden.test.ts src/components/weapon/readout.test.tsx`: 22 tests / 8 suites, 22 pass, 0 fail):
+- Test 1: `deriveWeapon` compared with all 5612 entries — 5612 pass, 0 fail (collapsed lines, exact raw attack/damage/range/ammo, exact `specialRaw`, and style-independence).
+- Test 2 options, test 4 UI flags (5612 entries), test 5 stale style (30/30), data check (22 keys, 20 distinct texts, all equal `specialRaw`).
+- Test 3 under O3: BFS from the initial state with `setType`/`toggleSmart` blocked whenever `controlsLocked` (= the `disabled` attribute) reaches exactly 606 states / 4646 DOM inputs = the golden `reach: "pointer"` set; none of the 60 unreachable. Without the block the reducer reaches all 732 / 5612. The difference is exactly the 126 states / 966 entries marked `keyboard-only` (Devouring specialization with a non-Devouring type and/or smart). Derivation of the O3 expectation: the old "pointer" BFS of the generator skipped the controls that carried the disabled class, whose condition (`specialization === 'Devouring'`) is the one now used for `disabled`; a disabled control fires no event by pointer or keyboard, so the O3 UI reachable set must equal the golden pointer set — asserted, not assumed.
+- Test 6: `ReadoutLines` rendered with `react-dom/server` for 732 distinct states (all pass) and mapped to all 5612 entries (all pass).
+
+**Browser** (other streams' dev server, because `next dev` refuses a second server in the same directory; see deviations): default state lines equal the plan's expected text; 6 golden entries driven through the real selects/checkbox (martialRanged2h+Devouring, martialRanged1h/Precognition/Gravity/smart, martialMelee2h/Halbert/BCI/Laser/smart, simpleRanged1h/Observer effect/Sonic, martialMelee1h/Shotel/Reflex/Gravity, simpleMelee1h/Hatchet/Heavy/Acidic/smart): 6/6 equal, read-back inputs equal. Under Devouring the type select and Smart are `disabled`, not focusable, clicking the Smart label does nothing, both carry "Sealed by organism" via `aria-describedby`. Stale style: simpleMelee1h/Hatchet → martialMelee2h shows Greataxe (select and schematic) → back shows Hatchet. Leaving Devouring via BCI resets type to Laser, smart false. No horizontal scroll at 1440×900, 844×390, 390×844.
+
+**Deviations**
+1. O3 (owner decision): the old 966 keyboard-only entries are unreachable in the UI. No other behavioural difference found.
+2. Desktop: at 1440×900 inside the new shell `main` is about 864×734; the console does not fit without scrolling `main`. The result (the five lines) is placed first in the right column so it is fully visible without scrolling; the schematic follows below. Plan 8.3 asked for "everything visible without inner scrolling".
+3. Landscape: the two columns scroll together inside `main` (no separate column scrolling); the strap is compacted instead.
+4. Panel body padding is reset through the shared Panel's `data-panel-body` hook; the Devouring surface tint is painted by the console's own inner layer.
+5. Could not run `next dev` on port 3105: Next 16 refuses a second dev server for the same directory ("Another next dev server is already running"). Used the running server of another stream (3101, later 3104) read-only, without starting or stopping it. Decorative animations could not be judged visually because the browser pane was hidden (animations frozen at frame 0); motion CSS is inside `motion-ok` only.
+
+**Not mine, seen while checking:** `tests/repo-guards.test.ts` test 3 fails on `src/lib/import/test-fixtures.ts` and `src/lib/import/write.test.ts` (Import stream).
+
+**Step 3:** nothing to wire; the page renders content only and uses `src/assets/tendrils.webp`. The parked `src/components/legacy/WeaponCreator/` can be deleted with the legacy folder.
+
+## Step 2 — D. Design system and shell (2026-11-24)
+
+Took over the previous agent's draft (tokens, mixins, globals, `ui/*` styles, `useLayoutMode`, `useDrawerSwipe`, `src/fonts/`, `src/assets/`); kept it after review and built the missing shell.
+
+### What was done
+- Tokens/globals/ui: kept the draft. Fixed `_mixins.scss`, which used the `hover` mixin without `@use 'layout'` (every route returned 500). No token renamed or removed (`git diff ecf0329` shows no removed token line); added `c-amber`, `c-ice`, `c-scrim`, `shell-pad`. Fonts through `next/font` (`src/fonts/index.ts`: Hacked-KerX local, IBM Plex Sans 400/500/600, Plex Mono 400/500). Component props unchanged from Foundation.
+- Shell (`src/components/shell/`): `AppShell` (grid, one drawer state, path-scoped so navigation closes drawers without an effect; Escape, scrim button, focus to heading on open, focus back to opener, Tab trap, `inert` on closed overlay drawers after hydration; route-change flicker overlay; FX scanline/noise overlay at 4%), `Drawer`, `ShipBar` (brand, 6 tiles with full/abbreviated names and status text+glyph, Kodning reserve meter), `SystemsDrawer` (accordion with "Open entry"), `CrewPanel` (name link + disclosure), `LocationPanel` (definition list from `ship-constants`), `NavList` (+ `RightRail`, `MenuList`, `AuthControl`), `DrawerToggle`, `SearchBox` (`next/form` to `/search`, prefilled on `/search`, own grid track), `HomeView`, `FaultFrame`, `shell-context.ts`. `useLayoutMode` also listens to `resize` as a fallback.
+- `layout.tsx` (connection, `isLoggedIn` + `getShellData`, metadata, viewport, `<AppShell>`), `page.tsx` (home: hull, status, latest five records), `loading.tsx`, `error.tsx` (`retry`, Next 16.3+ prop), `global-error.tsx`, `not-found.tsx`, `icon.svg`, `robots.ts`.
+- Assets [O2] (plain file ops): `public/` is now empty. Hull/font/tendrils originals deleted (copies in `src/assets`, `src/fonts`; `tendrils.webp` 1468×704 VP8); `galaxy_map*` → `assets-archive/`, `src/icons/*` → `assets-archive/icons/` (subfolder because `galaxy_map.jpg` exists twice, byte-identical), `assets-archive/README.txt`; deleted nebula, textures 1–6 + 3_background, static.gif, manifest.json, public/robots.txt, `src/app/favicon.ico`.
+
+### Checks
+- eslint on owned paths: clean. `tsc --noEmit`: 0 errors. Every owned `.scss` compiles with `sass`.
+- `repo-guards` + `layout.test`: 13 pass, 1 fail — "legacy table names only in legacy-keys.ts" fails on `src/lib/import/test-fixtures.ts` and `src/lib/import/write.test.ts` (Import stream).
+- Browser (own tab, dev server on 3104 stopped afterwards), `/` and `/kodning_weapon_creator`: at 1440×900, 1366×650, 844×390, 820×1180, 390×844, 360×640, 360×320, 390×450 `scrollWidth === innerWidth`, search box and `main` do not intersect, no visible shell control under 44 px; 360×320 and 390×450 use the portrait grid with the search box visible. 390×844: Tab order never enters a closed drawer. Crew/systems/menu open and close (button, scrim, Escape, swipe — synthetic touch events on nav row, gutters, ship bar, drawer, grab handles). `touch-action` on html/body `auto`, body not `overflow: hidden`. Focus ring 2 px phosphor on a Button via keyboard Tab. Search submit → `/search?q=warp`, box stays prefilled.
+- The emulated pane fires neither `resize` nor matchMedia `change` on resize, so checks reloaded after each resize.
+
+### Deviations / open items
+- Landscape grid has 4 columns (`nav ship search railR`) so the search box gets its own cell in the top row.
+- Hull image uses `object-fit: cover` with an aspect ratio, which crops the empty canvas margins, plus a phosphor CSS filter.
+- Pages that render their own `<main>` (e.g. `/login`) nest inside the shell's `main#content`; Step 3 should change those to `div`/`section`.
+- `AGENTS.md` at the repo root was generated by `next dev` (Next 16 "agentRules"); not created on purpose, not owned here.
+
+## Step 2 — C. Import
+
+Taken over from a previous agent that was cut off. Its draft (`src/lib/import/{chunk,schema,prompt,merge,plan,cli,extract,write}.ts`) was reviewed against plan 6 and kept; `cli.ts` got one lint fix (`const timer`). No tests, no script, no routes, no page and no samples existed. No earlier Step 2 Import log section existed. The database held no import rows before this work (`import_sources` 0, `entity_relations` 0, entities 49 all legacy) and holds the same afterwards: no rows were written by this stream.
+
+### Files (all inside the C ownership globs)
+- `src/lib/import/`: kept `chunk.ts`, `schema.ts`, `prompt.ts`, `merge.ts`, `plan.ts`, `cli.ts`, `extract.ts` (Claude calls + retry budget), `write.ts` (ImportStore: reads, claim, one write transaction per source). New: `pipeline.ts` (state machine of 6.7 over ImportStore + ClaudeRunner), `args.ts` (CLI flags), `upload-schema.ts` (client-safe, no Node imports), `handlers.ts` (POST/DELETE handler factories with injected auth/data), `queue.ts` (status read for 404 vs 409), `test-fixtures.ts`, and tests `chunk|schema|prompt|merge|plan|cli|extract|pipeline|write|args|handlers.test.ts`.
+- `scripts/import.ts`; `src/app/api/import/route.ts` (POST), `src/app/api/import/[id]/route.ts` (DELETE); `src/app/import/page.tsx` + `import.module.scss` (`requirePageAuth('/import')`, `robots: { index: false }`).
+- `src/components/import/`: `ImportExplainer`, `UploadForm`, `ImportQueue`, `QueueRefresh`, `RemoveSourceButton`, `format.ts`, `import.module.scss`, `import.test.tsx`, `test-scss-stub.ts` (test-only `.scss` loader for node:test).
+- `samples/sample-log.txt` (2,637 chars), `sample-log-followup.txt` (836 chars, alias "H. Quist", conflicting `status`, new entity "Ensign Corvin Hale"), `sample-extraction.stub.json` (9 entities, 9 relations, one deliberately unresolved).
+
+### Checks
+| Check | Result |
+|---|---|
+| `node --import tsx --test "src/lib/import/**/*.test.ts"` | 94/94 pass |
+| `node --import tsx --test "src/components/import/**/*.test.tsx"` | 8/8 pass |
+| `npx eslint scripts/import.ts src/lib/import src/app/import src/app/api/import src/components/import` | clean |
+| `CLAUDE_BIN=does-not-exist npm run import -- samples/sample-log.txt --dry-run` | exit 2, install/login instructions, no stack trace |
+| `IMPORT_STUB_FILE=samples/sample-extraction.stub.json npm run import -- samples/sample-log.txt --dry-run` | "STUB MODE — Claude was not called"; plan against the live 49 entities: created 9 · updated 0 · relations 8 · skipped 1; no "possible duplicate" |
+| `SELECT count(*), max(attempts) FROM import_sources` before/after both dry runs (read-only transaction) | 0 / null each time; no `sample-log.txt` row |
+| `curl -X POST :3103/api/import` (valid Origin, `{}`) | 401 `unauthorized`; foreign Origin 403; `DELETE /api/import/1` 401; `GET /import` 307 → `/login?next=%2Fimport` (dev server on 3103, stopped afterwards) |
+| Full gate after the other streams finished: `npm run typecheck`, `npm run lint`, `npm test` | exit 0 / 0 / 0 (236 tests); `tests/repo-guards.test.ts` 11/11 after replacing legacy table literals in two test files with `LEGACY_KEYS` |
+
+### Claude CLI ([O5])
+`claude` is not on PATH and `CLAUDE_BIN` is unset (`claude --version`: command not found). Nothing was installed or logged in. **No real model run happened**; the real runner is covered only by unit tests (recorded "Not logged in" object, missing binary, a non-Claude binary) and the two dry runs above (missing CLI, stub).
+
+### Deviations / notes
+1. Extra files not named in the plan: `pipeline.ts`, `args.ts`, `handlers.ts`, `queue.ts`, `extract.ts`, `test-fixtures.ts`, `src/components/import/{format.ts,QueueRefresh.tsx,RemoveSourceButton.tsx,ImportExplainer.tsx,test-scss-stub.ts}`.
+2. The dry-run "recording database double" is drizzle's `pg-proxy` driver feeding the real `createImportStore`; it asserts only SELECT statements are issued (file path and `--pending`).
+3. CLI accepts files up to 2 MiB (the `import_sources.byte_size` check constraint); uploads stay at 1 MiB per plan.
+4. `DELETE /api/import/[id]` returns 404 for a non-numeric id.
+5. Component tests render client components under a test `AppRouterContext` provider (internal `next/dist/shared/lib/app-router-context.shared-runtime` import, test-only).
+
+### For Step 3
+Put `/import` into the shell and do its visual check logged in at the three layouts; nav item "Import" is already in `navItemsFor`. Verifiers: real sample import uses copies named `zz-verify-sample-log*.txt` (10.1), dry run first. The stub's unresolved relation ("Unknown Foundry") is intentional and shows as 1 skipped.

@@ -1,0 +1,96 @@
+{
+  "entities": [
+    {
+      "existingId": null,
+      "type": "character",
+      "name": "Dr. Halvard Quist",
+      "aliases": ["the Archivist", "Halvard Quist"],
+      "summary": "Chief archivist of the Ymir-9 survey and the last person aboard to keep a log.",
+      "body": "Dr. Halvard Quist was the expedition's chief archivist aboard the survey tender Ymir-9; the crew called him the Archivist. He was a member of the Meridian Salvage Combine. He recorded everything on a hand-held unit he built himself from spare navigation parts. According to Quist, the lattice core was created by the Pale Chorus, and he gave the Pale Chorus its name.",
+      "attributes": { "role": "chief archivist", "affiliation": "Meridian Salvage Combine", "status": "missing" }
+    },
+    {
+      "existingId": null,
+      "type": "character",
+      "name": "Sergeant Odalys Brann",
+      "aliases": ["Odalys Brann"],
+      "summary": "Commander of the Ymir-9's security detail, on loan from the Meridian Salvage Combine's private guard.",
+      "body": "Sergeant Odalys Brann commanded the tender's security detail. She was a member of the Meridian Salvage Combine, on loan from its private guard. Her last entries describe sealing the lower decks and rationing oxygen. She distrusted the lattice core from the first day and asked twice for it to be jettisoned.",
+      "attributes": { "rank": "sergeant", "affiliation": "Meridian Salvage Combine" }
+    },
+    {
+      "existingId": null,
+      "type": "faction",
+      "name": "Meridian Salvage Combine",
+      "aliases": [],
+      "summary": "The corporate salvage outfit that owned the Ymir-9 and paid for the survey.",
+      "body": "The Meridian Salvage Combine is the corporate outfit that owned the survey tender Ymir-9 and paid for the survey. It keeps a private guard. Combine engineers fitted the lattice core to the Ymir-9 to replace its failing reactor.",
+      "attributes": { "kind": "corporation" }
+    },
+    {
+      "existingId": null,
+      "type": "location",
+      "name": "Kessler Drift",
+      "aliases": [],
+      "summary": "A dense field of shattered ice and hull debris that scrambles long-range scans.",
+      "body": "The Kessler Drift is a dense field of shattered ice and hull debris on the outer edge of the Tamsin reach. It is known to scramble long-range scans. Every object in the field turns slowly, and the debris sings faintly on open channels when a hull is struck. The boarding team recommended marking it as a no-transit zone.",
+      "attributes": { "region": "Tamsin reach", "hazard": "scrambles long-range scans" }
+    },
+    {
+      "existingId": null,
+      "type": "technology",
+      "name": "Lattice core",
+      "aliases": ["the lattice core"],
+      "summary": "An experimental power source of grown crystal recovered from the Kessler Drift.",
+      "body": "The lattice core is an experimental power source recovered from the Kessler Drift. It is a lattice of grown crystal that hums at a pitch just below hearing. According to Dr. Halvard Quist it was created by the Pale Chorus. Combine engineers fitted it to the Ymir-9 to replace the failing reactor. It went silent during the Kessler blackout.",
+      "attributes": { "origin": "Kessler Drift" }
+    },
+    {
+      "existingId": null,
+      "type": "creature",
+      "name": "Pale Chorus",
+      "aliases": ["the Pale Chorus"],
+      "summary": "Pale shapes in the Kessler Drift, heard as a layered, wordless singing.",
+      "body": "The Pale Chorus is the name Dr. Halvard Quist gave to the things in the Kessler Drift. They appear only as pale shapes at the edge of camera feeds and are heard rather than seen: a layered, wordless singing that grows louder near the lattice core. Two of Sergeant Brann's guards walked out of an airlock while humming the same tune.",
+      "attributes": { "hostile": true }
+    },
+    {
+      "existingId": null,
+      "type": "item",
+      "name": "Quist's recorder",
+      "aliases": [],
+      "summary": "The hand-held recorder Dr. Halvard Quist built from spare navigation parts.",
+      "body": "Quist's recorder is a battered hand-held unit that Dr. Halvard Quist built himself from spare navigation parts. It holds forty hours of audio, most of it whispered. It was recovered intact with its battery at four percent.",
+      "attributes": { "audio_hours": 40, "battery": "4%" }
+    },
+    {
+      "existingId": null,
+      "type": "event",
+      "name": "Kessler blackout",
+      "aliases": ["the Kessler blackout"],
+      "summary": "The six-hour total systems failure that ended the Ymir-9 survey.",
+      "body": "The Kessler blackout ended the survey. On the ninth day every system on the Ymir-9 failed at once, the lattice core went silent and the singing stopped. It took place inside the Kessler Drift and lasted six hours. When power came back, nine of the fourteen crew were gone.",
+      "attributes": { "duration": "6 hours", "missing_crew": 9 }
+    },
+    {
+      "existingId": null,
+      "type": "other",
+      "name": "Ymir-9",
+      "aliases": [],
+      "summary": "A survey tender of the Meridian Salvage Combine, found drifting in the Kessler Drift.",
+      "body": "The Ymir-9 is a survey tender owned by the Meridian Salvage Combine. It was found drifting inside the Kessler Drift with its running lights dark and its reactor cold for at least eleven days. Its failing reactor had been replaced by the lattice core.",
+      "attributes": { "class": "survey tender", "crew": 14 }
+    }
+  ],
+  "relations": [
+    { "from": "Dr. Halvard Quist", "to": "Meridian Salvage Combine", "kind": "member of", "note": null },
+    { "from": "Sergeant Odalys Brann", "to": "Meridian Salvage Combine", "kind": "member of", "note": "on loan from its private guard" },
+    { "from": "Ymir-9", "to": "Kessler Drift", "kind": "located in", "note": "found drifting" },
+    { "from": "Kessler blackout", "to": "Kessler Drift", "kind": "located in", "note": null },
+    { "from": "Lattice core", "to": "Pale Chorus", "kind": "created by", "note": "according to Quist" },
+    { "from": "Quist's recorder", "to": "Dr. Halvard Quist", "kind": "created by", "note": null },
+    { "from": "Pale Chorus", "to": "Kessler Drift", "kind": "located in", "note": null },
+    { "from": "Meridian Salvage Combine", "to": "Ymir-9", "kind": "owns", "note": null },
+    { "from": "the Archivist", "to": "Unknown Foundry", "kind": "enemy of", "note": "unresolved endpoint on purpose" }
+  ]
+}
