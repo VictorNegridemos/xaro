@@ -1,0 +1,13 @@
+// src/styles/_layout.scss — the only place where viewport breakpoints exist (plan 7.3).
+// FROZEN in Step 2. The three layout conditions are mirrored in src/lib/layout.ts for
+// matchMedia; src/lib/layout.test.ts fails when the two files disagree.
+// No CSS output: mixins only.
+
+@mixin desktop   { @media (width >= 1000px) and (height >= 600px) { @content; } }
+@mixin portrait  { @media (width < 600px), (600px <= width < 1000px) and (orientation: portrait) { @content; } }
+@mixin landscape { @media (600px <= width < 1000px) and (orientation: landscape), (width >= 1000px) and (height < 600px) { @content; } }
+
+@mixin hover          { @media (hover: hover) and (pointer: fine) { @content; } }
+@mixin coarse         { @media (pointer: coarse) { @content; } }
+@mixin motion-ok      { @media (prefers-reduced-motion: no-preference) { @content; } }
+@mixin reduced-motion { @media (prefers-reduced-motion: reduce) { @content; } }

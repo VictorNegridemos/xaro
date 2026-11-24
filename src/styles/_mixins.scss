@@ -1,0 +1,51 @@
+// Shared mixins. No CSS output here. Viewport and input-capability queries live in _layout.scss.
+
+// The one focus ring used by every control: 2px accent outline, 2px offset.
+@mixin focus-ring($color: var(--accent)) {
+  &:focus-visible {
+    outline: var(--bw-strong) solid $color;
+    outline-offset: 2px;
+  }
+}
+
+// Hard-edged frame with cut corners instead of rounding.
+@mixin notch($size: 0.5rem) {
+  clip-path: polygon(
+    $size 0, 100% 0, 100% calc(100% - #{$size}), calc(100% - #{$size}) 100%, 0 100%, 0 $size
+  );
+}
+
+// Minimum 44px hit area.
+@mixin tap-target {
+  min-block-size: var(--tap);
+  min-inline-size: var(--tap);
+}
+
+// Text in the display font: never below --fs-sm, slightly tracked.
+@mixin display-text($size: var(--fs-sm)) {
+  font-family: var(--font-display);
+  font-size: $size;
+  letter-spacing: 0.04em;
+  line-height: var(--lh-tight);
+}
+
+// A region that scrolls on its own inside the grid shell.
+@mixin scroll-y {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line-strong) transparent;
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

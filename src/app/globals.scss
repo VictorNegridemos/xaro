@@ -1,0 +1,90 @@
+// The only global stylesheet: reset, :root custom properties, base elements, reduced motion (plan 7.1).
+@use 'index' as *;
+
+:root {
+  @include root-tokens;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--c-void);
+  color: var(--c-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-inline-size: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: var(--bw-strong) solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--c-phosphor-dim);
+  color: var(--c-on-phosphor);
+}
+
+mark {
+  background: var(--c-mark-bg);
+  color: var(--c-text);
+}
+
+@include reduced-motion {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
