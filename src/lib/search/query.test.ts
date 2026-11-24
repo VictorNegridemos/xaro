@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  buildPrefixQuery, buildResponse, foldApostrophes, normalizeQuery, prepareSearch, search, totalFromFacets,
+  MAX_QUERY_TERMS, buildPrefixQuery, buildResponse, foldApostrophes, normalizeQuery, prepareSearch, search,
+  searchTerms, totalFromFacets,
 } from './query'
+import { PgDialect } from 'drizzle-orm/pg-core'
+import { rankedQuery } from './sql'
 import { SearchInputError, type SearchInput } from './schema'
 import { entryHref, searchHref } from './href'
 import { parseLegacyId } from './legacy-redirect'
@@ -40,6 +43,72 @@ test('buildPrefixQuery: sanitised tokens only, capped', () => {
   }
 })
 
+test('searchTerms: words only, de-duplicated case-insensitively after apostrophe folding', () => {
+  assert.equal(searchTerms('Warp warp WARP'), 'Warp')
+  assert.equal(searchTerms("Kal O'Dun"), "Kal O'Dun")
+  assert.equal(searchTerms("O'Dun ODun o’dun"), "O'Dun")
+  assert.equal(searchTerms('🚀 warp'), 'warp')
+  assert.equal(searchTerms('warp 🚀 🚀 warp'), 'warp')
+  assert.equal(searchTerms('semi-organic'), 'semi-organic')
+  assert.equal(searchTerms('warp-warp-drive warp'), 'warp drive')
+  assert.equal(searchTerms("x'x'x'x"), 'x')
+  assert.equal(searchTerms('warp.warp,warp_warp/warp'), 'warp')
+  assert.equal(searchTerms('%'), '')
+  assert.equal(searchTerms("' OR 1=1 --"), 'OR 1')
+  assert.equal(searchTerms('warp & !cannon | (core'), 'warp cannon core')
+  assert.equal(searchTerms('K82ACA'), 'K82ACA')
+})
+
+test('searchTerms: at most MAX_QUERY_TERMS distinct runs', () => {
+  assert.equal(MAX_QUERY_TERMS, 8)
+  const many = 'one two three four five six seven eight nine ten eleven twelve'
+  assert.equal(searchTerms(many), 'one two three four five six seven eight')
+  assert.equal(searchTerms('a-b-c-d-e-f-g-h-i-j'), 'a-b-c-d-e-f-g-h'.replace(/-/g, ' '))
+  assert.equal(searchTerms('a b c d e f g h-i'), 'a b c d e f g h')
+})
+
+const runsOf = (s: string) => s.toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) ?? []
+
+test('pathological queries bind a small, repetition-free $1, $2 and prefix (F1)', () => {
+  const dialect = new PgDialect()
+  const inputs = [
+    'warp '.repeat(40).trim(),            // the 199-character query that broke the connection
+    'x '.repeat(100).trim(),
+    'x'.repeat(200),
+    "x'".repeat(99) + 'x',
+    'warp-'.repeat(39) + 'warp',
+    '🚀 '.repeat(60) + 'warp',
+    Array.from({ length: 30 }, (_, i) => `w${i}`).join(' '),
+    'Warp wArp WARP warp '.repeat(9).trim(),
+  ]
+  for (const input of inputs) {
+    const prepared = prepareSearch({ q: input })
+    for (const bound of [prepared.terms, prepared.folded]) {
+      const runs = runsOf(bound)
+      assert.ok(runs.length <= MAX_QUERY_TERMS, `${input.slice(0, 20)}: ${runs.length} runs`)
+      assert.equal(new Set(runs).size, runs.length, `${input.slice(0, 20)}: repeated run in ${bound}`)
+    }
+    assert.ok(prepared.prefix.split(/[&|]/).length <= 2 * MAX_QUERY_TERMS)
+    const query = dialect.sqlToQuery(rankedQuery({
+      q: prepared.terms, folded: prepared.folded, prefix: prepared.prefix, type: null, limit: 20, offset: 0, hlOptions: '',
+    }))
+    assert.ok(query.params.every((p) => typeof p !== 'string' || p.length <= 200))
+  }
+  assert.equal(prepareSearch({ q: 'warp '.repeat(40).trim() }).terms, 'warp')
+  assert.equal(prepareSearch({ q: 'warp '.repeat(40).trim() }).q, 'warp '.repeat(40).trim()) // echoed unchanged
+  assert.equal(prepareSearch({ q: '🚀 warp' }).terms, 'warp')
+})
+
+test('search: a query without any word never touches the database, even with a type', async () => {
+  const db = new Proxy({}, { get() { throw new Error('database used') } })
+  for (const input of [{ q: '%' }, { q: '!!!???...' }, { q: '🚀🚀', type: 'record' }, { q: "'", type: 'character' }]) {
+    const response = await search(input, db as never)
+    assert.equal(response.total, 0)
+    assert.deepEqual(response.results, [])
+    assert.equal(response.q, input.q)
+  }
+})
+
 const errorCode = (input: SearchInput): string | null => {
   try {
     prepareSearch(input)
@@ -51,9 +120,9 @@ const errorCode = (input: SearchInput): string | null => {
 
 test('prepareSearch validates type, page and length', () => {
   assert.deepEqual(prepareSearch({ q: ' -warp ', type: 'ship_system', page: '2' }), {
-    q: 'warp', type: 'ship_system', page: 2, folded: 'warp', prefix: 'warp:*',
+    q: 'warp', type: 'ship_system', page: 2, terms: 'warp', folded: 'warp', prefix: 'warp:*',
   })
-  assert.deepEqual(prepareSearch({}), { q: '', type: null, page: 1, folded: '', prefix: '' })
+  assert.deepEqual(prepareSearch({}), { q: '', type: null, page: 1, terms: '', folded: '', prefix: '' })
   assert.equal(prepareSearch({ q: ['a', 'b'] }).q, 'a')
   assert.equal(errorCode({ q: 'x', type: 'nonsense' }), 'invalid_type')
   assert.equal(errorCode({ q: 'x', page: '0' }), 'invalid_page')

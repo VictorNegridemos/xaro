@@ -14,14 +14,14 @@
   dt {
     @include label-text;
     color: var(--c-text-faint);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   dd {
     @include mono-text(var(--fs-sm));
     min-inline-size: 0;
     color: var(--c-text);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 }
 
@@ -51,7 +51,7 @@
   padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
   color: var(--c-text);
   text-decoration: none;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 
   &::before {
     content: '>';
@@ -163,7 +163,8 @@
   justify-content: space-between;
   gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  color: var(--c-text-disabled);
+  // --c-text-faint (5.7:1 on the hull) instead of the disabled token (3.44:1): this is readable text.
+  color: var(--c-text-faint);
 }
 
 // ---- systems accordion ----
@@ -187,7 +188,8 @@
 .systemRow {
   @include button-reset;
   display: grid;
-  grid-template-columns: minmax(0, 9ch) minmax(0, 1fr) auto auto;
+  // The category column is as wide as its longest word ("PROPULSION"), so no category breaks mid-word.
+  grid-template-columns: max-content minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--sp-3);
   inline-size: 100%;
@@ -216,14 +218,15 @@
 
 .systemCategory {
   @include label-text;
+  letter-spacing: 0.04em;
   color: var(--c-text-faint);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .systemName {
   @include display-text(var(--fs-sm));
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .systemStatus {

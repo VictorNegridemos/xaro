@@ -52,11 +52,14 @@ export function WeaponCreator(): React.JSX.Element {
             <div className={styles.controlsArea}>
               <WeaponControls state={state} dispatch={dispatch} />
             </div>
-            <div className={styles.resultArea}>
-              <WeaponReadout state={state} headingId={resultHeadingId} />
-            </div>
-            <div className={styles.schematicArea}>
-              <WeaponSchematic state={state} />
+            {/* The readout column: one grid area (and one scroll region) in landscape and desktop. */}
+            <div className={styles.readoutArea}>
+              <div className={styles.resultArea}>
+                <WeaponReadout state={state} headingId={resultHeadingId} />
+              </div>
+              <div className={styles.schematicArea}>
+                <WeaponSchematic state={state} />
+              </div>
             </div>
           </div>
         </div>

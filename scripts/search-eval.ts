@@ -5,7 +5,7 @@
 import { inArray } from 'drizzle-orm'
 import { entities } from '../src/lib/db/schema'
 import { EVAL_CASES, type EvalCase, type EvalInput, type Expectation } from '../src/lib/search/eval-cases'
-import { search } from '../src/lib/search/query'
+import { MAX_QUERY_TERMS, prepareSearch, search } from '../src/lib/search/query'
 import { SearchInputError, type SearchResponse } from '../src/lib/search/schema'
 import { runScript } from './lib/env'
 import { openScriptDb } from './lib/script-db'
@@ -104,7 +104,30 @@ function printTop(response: SearchResponse): void {
   if (response.total > 5) console.log(`        … ${response.total} in total`)
 }
 
+/**
+ * Safety net (fix round 1, F1): before anything reaches the database, every case input must bind a
+ * short, repetition-free word list. A failure here stops the run with no query sent.
+ */
+function assertBoundInputsAreSmall(): void {
+  for (const evalCase of EVAL_CASES) {
+    for (const input of evalCase.inputs) {
+      let terms: string
+      try {
+        terms = prepareSearch(input).terms
+      } catch (error) {
+        if (error instanceof SearchInputError) continue
+        throw error
+      }
+      const runs = terms.toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) ?? []
+      if (runs.length > MAX_QUERY_TERMS || new Set(runs).size !== runs.length) {
+        throw new Error(`Case ${evalCase.id} would bind "${terms.slice(0, 60)}" — refusing to run any case`)
+      }
+    }
+  }
+}
+
 async function main(): Promise<void> {
+  assertBoundInputsAreSmall()
   const quiet = process.argv.includes('--quiet')
   const { db, close } = openScriptDb()
   let passed = 0

@@ -35,3 +35,11 @@
   @include label-text;
   color: var(--c-text-faint);
 }
+
+// The <h1> inside the <hgroup> takes the title's type from the group.
+.heading {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}

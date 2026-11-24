@@ -22,10 +22,11 @@ export function HomeView({ shell, recent }: HomeViewProps): React.JSX.Element {
 
   return (
     <div className={styles.home}>
-      <h1 className={styles.title}>
-        <span className={styles.titleKicker}>Ship computer</span>
-        X&apos;aro
-      </h1>
+      {/* The kicker is outside the <h1>, so the heading's accessible name is "X'aro" alone. */}
+      <hgroup className={styles.title}>
+        <p className={styles.titleKicker}>Ship computer</p>
+        <h1 className={styles.titleText}>X&apos;aro</h1>
+      </hgroup>
 
       <figure className={styles.hull}>
         <Image

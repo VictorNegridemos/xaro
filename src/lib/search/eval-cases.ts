@@ -1,4 +1,6 @@
-// The test queries of plan 4.4 (V4), based on the 49 rows copied from the legacy tables.
+// The test queries of plan 4.4 (V4), based on the rows copied from the legacy tables. Case 27
+// (`test13`, duplicate test records) was removed after the O1 clean-up (plan 4.4, fix round 1);
+// cases 35-38 were added in fix round 1 (F1 repeated / many words, F3 noise token).
 // Run by `npm run search:eval` (scripts/search-eval.ts), which only reads the database.
 import type { EntityType } from '../data/types'
 import type { SearchInputErrorCode } from './schema'
@@ -74,7 +76,6 @@ export const EVAL_CASES: readonly EvalCase[] = [
   { id: 24, kind: 'type filter', inputs: [{ q: 'organic', type: 'character' }], expect: [{ kind: 'count', exactly: 6 }, { kind: 'allOfType', type: 'character' }] },
   { id: 25, kind: 'ranking', inputs: [{ q: 'warp' }], expect: [{ kind: 'top', names: ['Warp', 'Warp drone matrix'] }] },
   { id: 26, kind: 'type filter', inputs: [{ q: 'warp', type: 'record' }], expect: [{ kind: 'noneOfType', type: 'ship_system' }] },
-  { id: 27, kind: 'duplicate names', inputs: [{ q: 'test13' }], expect: [{ kind: 'topSlugs', slugs: ['test13', 'test13-19'] }], needsSlugs: ['test13', 'test13-19'] },
   { id: 28, kind: 'natural language', inputs: [{ q: 'who is the captain' }], expect: [{ kind: 'includes', names: ['Jagoda Migdal'], within: 2 }] },
   { id: 29, kind: 'no match', inputs: [{ q: 'zzqqxx' }], expect: [{ kind: 'count', exactly: 0 }] },
   { id: 30, kind: 'former wildcards', inputs: [{ q: '%' }, { q: '_' }], expect: [{ kind: 'count', exactly: 0 }] },
@@ -82,4 +83,9 @@ export const EVAL_CASES: readonly EvalCase[] = [
   { id: 32, kind: 'browse', inputs: [{ type: 'ship_system' }], expect: [{ kind: 'count', exactly: 8 }, { kind: 'allOfType', type: 'ship_system' }, { kind: 'orderedByName' }] },
   { id: 33, kind: 'leading minus', inputs: [{ q: '-warp' }], expect: [{ kind: 'sameResultsAs', caseId: 25 }] },
   { id: 34, kind: 'page past the end', inputs: [{ q: 'warp', page: '50' }], expect: [{ kind: 'count', exactly: 0 }, { kind: 'sameTotalAs', caseId: 25 }] },
+  // Repeated words are de-duplicated before anything is bound ($1 = 'warp'); see searchTerms().
+  { id: 35, kind: 'repeated word (F1)', inputs: [{ q: 'warp '.repeat(40).trim() }], expect: [{ kind: 'top', names: ['Warp', 'Warp drone matrix'] }, { kind: 'sameResultsAs', caseId: 25 }] },
+  { id: 36, kind: 'repeated word, mixed case and hyphens (F1)', inputs: [{ q: 'Warp WARP warp-warp wArP' }], expect: [{ kind: 'sameResultsAs', caseId: 25 }] },
+  { id: 37, kind: 'many distinct words, capped at 8 (F1)', inputs: [{ q: 'tell me everything about the rail cannon and how far it can shoot please' }], expect: [{ kind: 'top', names: ['Rail cannon'] }] },
+  { id: 38, kind: 'emoji + word (F3)', inputs: [{ q: '🚀 warp' }], expect: [{ kind: 'top', names: ['Warp', 'Warp drone matrix'] }, { kind: 'sameResultsAs', caseId: 25 }] },
 ]

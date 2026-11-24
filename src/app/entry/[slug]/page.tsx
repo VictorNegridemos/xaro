@@ -20,7 +20,7 @@ const loadEntity = cache(async (slug: string) => (
 
 export async function generateMetadata({ params }: PageProps<'/entry/[slug]'>): Promise<Metadata> {
   const entity = await loadEntity((await params).slug)
-  return { title: entity ? `${entity.name} — X'aro` : `Not found — X'aro` }
+  return { title: entity ? `${entity.name} — X'aro` : `Record not found — X'aro` }
 }
 
 export default async function EntryPage({ params }: PageProps<'/entry/[slug]'>): Promise<React.JSX.Element> {

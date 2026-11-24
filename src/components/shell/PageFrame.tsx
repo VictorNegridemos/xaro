@@ -18,12 +18,15 @@ export interface PageFrameProps {
 export function PageFrame({ width = 'measure', title, kicker, className, children }: PageFrameProps): React.JSX.Element {
   return (
     <div className={cx(styles.page, styles[width], className)} data-page-frame={width}>
-      {title !== undefined ? (
-        <h1 className={styles.title}>
-          {kicker !== undefined ? <span className={styles.kicker}>{kicker}</span> : null}
-          {title}
-        </h1>
-      ) : null}
+      {title === undefined ? null : kicker === undefined ? (
+        <h1 className={styles.title}>{title}</h1>
+      ) : (
+        // The kicker is outside the <h1>, so the heading's accessible name is the title alone.
+        <hgroup className={styles.title}>
+          <p className={styles.kicker}>{kicker}</p>
+          <h1 className={styles.heading}>{title}</h1>
+        </hgroup>
+      )}
       {children}
     </div>
   )

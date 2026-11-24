@@ -93,30 +93,33 @@ export function WeaponSchematic({ state }: { state: WeaponState }): React.JSX.El
       {devouring ? (
         <Image className={styles.tendrils} src={tendrils} alt="" fill loading="eager" sizes="(width >= 1000px) 50vw, 100vw" />
       ) : null}
-      <div className={styles.schematicHead}>
-        <span className={styles.schematicStyle}>{displayedStyle(state)}</span>
-        <span className={styles.schematicMeta}>{weaponProficiencies[state.proficiency]}</span>
-        <span className={styles.schematicMeta}>{`${state.type} // ${state.specialization}`}</span>
+      {/* Header and drawing; on desktop they sit beside the plates (weapon.module.scss). */}
+      <div className={styles.schematicMain}>
+        <div className={styles.schematicHead}>
+          <span className={styles.schematicStyle}>{displayedStyle(state)}</span>
+          <span className={styles.schematicMeta}>{weaponProficiencies[state.proficiency]}</span>
+          <span className={styles.schematicMeta}>{`${state.type} // ${state.specialization}`}</span>
+        </div>
+        {/* key: a new outline replays the draw-in */}
+        <svg key={silhouette} className={styles.drawing} viewBox="0 0 480 180" role="presentation" focusable="false">
+          <g className={styles.ticks}>
+            <path d="M20 166 H460" />
+            {TICKS.map((x) => <path key={x} d={`M${x} 166 v${x % 100 === 20 ? -9 : -5}`} />)}
+            <path d={`M${x1} 24 V${silhouette === 'melee2h' ? 44 : 36} M${x2} 24 V${silhouette === 'melee2h' ? 44 : 36} M${x1} 28 H${x2}`} />
+            <path d={`M${x1} 28 l7 -3 v6 z M${x2} 28 l-7 -3 v6 z`} className={styles.tickFill} />
+          </g>
+          <g className={styles.outline}>
+            {shape.outline.map((d) => <path key={d} d={d} pathLength={1} />)}
+          </g>
+          <g className={styles.detail}>
+            {shape.detail.map((d) => <path key={d} d={d} />)}
+          </g>
+          <g className={styles.core}>
+            <circle cx={shape.core[0]} cy={shape.core[1]} r="9" />
+            <circle cx={shape.core[0]} cy={shape.core[1]} r="3.5" className={styles.coreDot} />
+          </g>
+        </svg>
       </div>
-      {/* key: a new outline replays the draw-in */}
-      <svg key={silhouette} className={styles.drawing} viewBox="0 0 480 180" role="presentation" focusable="false">
-        <g className={styles.ticks}>
-          <path d="M20 166 H460" />
-          {TICKS.map((x) => <path key={x} d={`M${x} 166 v${x % 100 === 20 ? -9 : -5}`} />)}
-          <path d={`M${x1} 24 V${silhouette === 'melee2h' ? 44 : 36} M${x2} 24 V${silhouette === 'melee2h' ? 44 : 36} M${x1} 28 H${x2}`} />
-          <path d={`M${x1} 28 l7 -3 v6 z M${x2} 28 l-7 -3 v6 z`} className={styles.tickFill} />
-        </g>
-        <g className={styles.outline}>
-          {shape.outline.map((d) => <path key={d} d={d} pathLength={1} />)}
-        </g>
-        <g className={styles.detail}>
-          {shape.detail.map((d) => <path key={d} d={d} />)}
-        </g>
-        <g className={styles.core}>
-          <circle cx={shape.core[0]} cy={shape.core[1]} r="9" />
-          <circle cx={shape.core[0]} cy={shape.core[1]} r="3.5" className={styles.coreDot} />
-        </g>
-      </svg>
       <dl className={styles.plates}>
         {plates.map((plate) => (
           <div key={plate.key} className={styles.plate}>

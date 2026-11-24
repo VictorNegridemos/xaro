@@ -2,6 +2,9 @@
 // VERBATIM (sql.test.ts compares it with scripts/sql/search-smoke.sql). Do not reformat it.
 // Only the five numeric weights of the score expression may be tuned (plan 4.4).
 //
+// $1 is not the raw input: query.ts binds the de-duplicated words capped at MAX_QUERY_TERMS
+// (searchTerms, fix round 1 F1), which keeps the ts_headline tsquery small; the text is unchanged.
+//
 // Values never enter the text: bindSql() turns every $n placeholder into a bound Drizzle parameter.
 import { sql, type SQL } from 'drizzle-orm'
 

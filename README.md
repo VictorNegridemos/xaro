@@ -44,8 +44,8 @@ can log in, and every write returns 401. Scripts load `.env.local`, then `.env`;
 | `npm run import -- …` | import `.txt` files through the local Claude CLI (see below) |
 | `npm run search:eval` | the search test queries, in a read-only transaction |
 | `npm run db:backup` | export + checksums of the three legacy tables to `backups/<timestamp>/` |
-| `npm run db:copy-legacy` | copy new legacy rows into `entities` (idempotent; rows already copied are skipped) |
-| `npm run db:verify-legacy [-- --coverage \| --drift]` | read-only checks of the legacy tables against the backup |
+| `npm run db:copy-legacy [-- --dry-run]` | copy new legacy rows into `entities` (idempotent; rows already copied and the O1 exclusions are skipped; the dry run rolls back) |
+| `npm run db:verify-legacy [-- --coverage \| --drift]` | read-only checks of the legacy tables against the backup; `--coverage` and `--drift` treat the O1 exclusions as expected-absent |
 | `npm run db:generate` / `db:check` | drizzle-kit `generate` / `check` only |
 | `npm run db:migrate [-- --dry-run]` | guarded migration runner (backup first; dry run rolls back) |
 | `npm run verify:cleanup [-- --snapshot \| --compare \| --throttle]` | remove marked verification rows from the NEW tables |
@@ -62,6 +62,12 @@ when logged in, and every write route checks the session on the server.
 **Throttling:** 5 attempts per 15 minutes per client address (stored hashed in `auth_throttle`). The
 6th and later attempts in the window are refused **even with the correct password**, until the window
 ends (the response says how long).
+
+**Trusted proxy required:** the throttle takes the client address from `X-Real-IP` / `X-Forwarded-For`,
+and the same-origin check of the write routes compares `Origin` with `X-Forwarded-Host` (then `Host`).
+On Vercel the platform overwrites these headers. When self-hosting, run the app only behind a reverse
+proxy that overwrites (not appends to) `X-Real-IP`, `X-Forwarded-For` and `X-Forwarded-Host`; otherwise
+a client can set them and get fresh throttle buckets.
 
 **Change the password:**
 
@@ -129,8 +135,15 @@ Known limits:
 
 Agents never push or deploy. In Vercel: add `AUTH_PASSWORD_HASH` and `SESSION_SECRET` (from
 `.env.local`); keep `DATABASE_URL`; no Output Directory override; Node.js 22.x. Right after a deploy, on
-the PC: `npm run db:backup`, `npm run db:copy-legacy` (picks up records added on the old site meanwhile),
-`npm run db:verify-legacy -- --drift`, and fix by hand any record it lists as changed.
+the PC: `npm run db:backup`, `npm run db:copy-legacy -- --dry-run` (shows what would be inserted), then
+`npm run db:copy-legacy` (picks up records added on the old site meanwhile),
+`npm run db:verify-legacy -- --coverage` and `-- --drift`, and fix by hand any record it lists as changed.
+
+The 25 test and duplicate records removed under owner decision O1 (legacy `ship_records` ids 2–9, 11, 12,
+14–23, 26, 27, 29, 34, 35; copies deleted from `entities` on 2026-11-24, backup in
+`backups/o1-delete-20261124T161525Z/`) are listed in `src/lib/data/legacy-exclusions.ts`. The copy never
+inserts them again, `--coverage` expects them to have no copy, and `--drift` lists changes to them only as
+information. To bring one back, remove its id from that list and run the copy.
 
 ## Legacy tables
 

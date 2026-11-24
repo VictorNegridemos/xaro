@@ -52,7 +52,8 @@
   gap: 0.25rem;
   min-inline-size: var(--tap);
   min-block-size: calc(var(--tap) + var(--sp-2));
-  padding: var(--sp-1);
+  // Narrow side padding: "LOCATION" must fit on one line in a 72px item at 360px wide.
+  padding: var(--sp-1) 0.125rem;
   color: var(--c-text-dim);
   text-align: center;
   text-decoration: none;
@@ -101,8 +102,9 @@
 .label {
   @include label-text;
   max-inline-size: 100%;
-  letter-spacing: 0.04em;
-  overflow-wrap: anywhere;
+  letter-spacing: 0.02em;
+  // Wrap only between words; a word is broken only if it could not fit at all (never overflows).
+  overflow-wrap: break-word;
 }
 
 .logout {

@@ -12,6 +12,12 @@ import {
 import { facetsQuery, rankedQuery, suggestQuery } from './sql'
 
 const MAX_PREFIX_TOKENS = 8
+/**
+ * At most this many distinct words (letter/digit runs) of a query reach the database (fix round 1,
+ * F1). A repeated word made ts_headline allocate memory combinatorially (`warp`×40 dropped the
+ * database connection); distinct words are cheap. 8 equals the prefix-token cap of plan 4.1.
+ */
+export const MAX_QUERY_TERMS = 8
 const MAX_PREFIX_TOKEN_CHARS = 40
 const MIN_SUGGEST_CHARS = 3
 
@@ -37,6 +43,46 @@ export function foldApostrophes(q: string): string {
   return q.replace(/(?<=[\p{L}\p{N}])['’`](?=[\p{L}\p{N}])/gu, '')
 }
 
+// A word: letter/digit runs, optionally joined by inner apostrophes or hyphens ("O'Dun", "semi-organic").
+const WORD = /[\p{L}\p{M}\p{N}]+(?:['’`-][\p{L}\p{M}\p{N}]+)*/gu
+const RUN_SEPARATOR = /['’`-]/u
+
+/**
+ * The words of an already normalised query that are bound as `$1` (plan 4.2), de-duplicated and
+ * capped (fix round 1, F1/F3):
+ * - only words survive; tokens without a letter or digit (emoji, `&`, `|`, quotes) carry nothing for
+ *   the full-text or trigram arms and are dropped, so `🚀 warp` binds `warp` and keeps the exact-name
+ *   bonus (F3). Side effect: websearch quotes no longer form a phrase (`"queen of lies"` = queen of lies);
+ * - a word whose apostrophe-folded, lower-cased form was already seen is dropped (`Warp warp`, `O'Dun ODun`);
+ * - within the query every letter/digit run counts once: a word that repeats a run (`warp-warp`,
+ *   `x'x'x`) keeps only its new runs, joined by spaces;
+ * - at most MAX_QUERY_TERMS runs in total.
+ */
+export function searchTerms(q: string): string {
+  const seenWords = new Set<string>()
+  const seenRuns = new Set<string>()
+  const out: string[] = []
+  let runs = 0
+  for (const word of q.match(WORD) ?? []) {
+    if (runs >= MAX_QUERY_TERMS) break
+    const wordKey = foldApostrophes(word).toLowerCase()
+    if (seenWords.has(wordKey)) continue
+    seenWords.add(wordKey)
+    const parts = word.split(RUN_SEPARATOR)
+    const fresh: string[] = []
+    for (const part of parts) {
+      const key = part.toLowerCase()
+      if (seenRuns.has(key) || runs >= MAX_QUERY_TERMS) continue
+      seenRuns.add(key)
+      fresh.push(part)
+      runs += 1
+    }
+    if (fresh.length === 0) continue
+    out.push(fresh.length === parts.length ? word : fresh.join(' '))
+  }
+  return out.join(' ')
+}
+
 function prefixTokens(text: string): string[] {
   return (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
     .slice(0, MAX_PREFIX_TOKENS)
@@ -57,6 +103,9 @@ export function buildPrefixQuery(q: string, folded: string): string {
 }
 
 export interface PreparedSearch extends SearchParams {
+  /** De-duplicated, capped words of `q` (searchTerms); bound as `$1`. '' when `q` has no word. */
+  terms: string
+  /** `terms` with apostrophes folded; bound as `$2`. */
   folded: string
   prefix: string
 }
@@ -67,8 +116,11 @@ export function prepareSearch(input: SearchInput): PreparedSearch {
   if (!parsed.ok) throw new SearchInputError(parsed.error)
   const q = normalizeQuery(parsed.value.q)
   if (Array.from(q).length > MAX_QUERY_CHARS) throw new SearchInputError('query_too_long')
-  const folded = foldApostrophes(q)
-  return { q, type: parsed.value.type, page: parsed.value.page, folded, prefix: buildPrefixQuery(q, folded) }
+  const terms = searchTerms(q)
+  const folded = foldApostrophes(terms)
+  return {
+    q, type: parsed.value.type, page: parsed.value.page, terms, folded, prefix: buildPrefixQuery(terms, folded),
+  }
 }
 
 export interface FacetRow { type: EntityType; n: number }
@@ -168,8 +220,10 @@ export async function search(input: SearchInput, db: DbOrTx = getDb()): Promise<
     if (prepared.type === null) return buildResponse(params, [], [])
     return browse({ ...params, type: prepared.type }, db)
   }
+  // Only punctuation or symbols (`%`, `!!!`, an emoji): nothing can match, no query is sent.
+  if (prepared.terms === '') return buildResponse(params, [], [])
 
-  const bound = { q: prepared.q, folded: prepared.folded, prefix: prepared.prefix }
+  const bound = { q: prepared.terms, folded: prepared.folded, prefix: prepared.prefix }
   const [rows, facetRows] = await Promise.all([
     db.execute(rankedQuery({
       ...bound,
@@ -184,8 +238,8 @@ export async function search(input: SearchInput, db: DbOrTx = getDb()): Promise<
     params, rows as unknown as RankedRow[], facetRows as unknown as FacetRow[],
   )
 
-  if (response.total === 0 && Array.from(prepared.q).length >= MIN_SUGGEST_CHARS) {
-    const suggested = await db.execute(suggestQuery(prepared.q))
+  if (response.total === 0 && Array.from(prepared.terms).length >= MIN_SUGGEST_CHARS) {
+    const suggested = await db.execute(suggestQuery(prepared.terms))
     response.suggestions = (suggested as unknown as SearchSuggestion[])
       .map((row) => ({ name: row.name, slug: row.slug }))
   }

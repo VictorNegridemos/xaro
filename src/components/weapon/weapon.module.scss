@@ -60,6 +60,11 @@
     padding: var(--sp-3);
   }
 
+  @include desktop {
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+  }
+
   // Corner brackets in the payload colour; under Devouring they "bleed".
   &::before,
   &::after {
@@ -129,6 +134,10 @@
   @include landscape {
     min-block-size: 1.5rem;
   }
+
+  @include desktop {
+    min-block-size: 1.5rem;
+  }
 }
 
 .hatch {
@@ -175,6 +184,13 @@
 // Layout (three layouts through the shared mixins; base = single column)
 // ---------------------------------------------------------------------------------------------
 
+// Landscape and desktop share one structure: the console fills the height of main, and the two columns
+// (controls | readout) each scroll on their own if they ever need to, so main itself does not scroll.
+@mixin two-columns {
+  @include landscape { @content; }
+  @include desktop { @content; }
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -185,38 +201,128 @@
   gap: var(--sp-4);
   align-items: start;
 
-  @include landscape {
-    grid-template-columns: minmax(15rem, 2fr) minmax(0, 3fr);
-    grid-template-areas:
-      'controls result'
-      'controls schematic';
-    grid-template-rows: auto 1fr;
+  @include two-columns {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'controls readout';
+    align-items: stretch;
+    min-block-size: 0;
   }
 
+  // Landscape (plan 8.3): two columns, each scrolling on its own; the readout column shows the five lines first.
+  // The controls column is wide enough for the longest proficiency label at 844x390.
+  @include landscape {
+    grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.2fr);
+    gap: var(--sp-3);
+  }
+
+  // Desktop (plan 8.3): everything visible at 1440x900. The result always gets its full height; the compact
+  // schematic takes what is left and is hidden when less than its own height is left (container query below).
   @include desktop {
     grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
-    // The five real lines first: they are what the page is for; the schematic follows them.
-    grid-template-areas:
-      'controls result'
-      'controls schematic';
-    grid-template-rows: auto 1fr;
-    gap: var(--sp-4) var(--sp-5);
+    gap: var(--sp-3) var(--sp-4);
+  }
+}
+
+// Portrait: the wrapper does not exist for the grid, so the order stays controls, result, schematic.
+.readoutArea {
+  display: contents;
+
+  @include two-columns {
+    grid-area: readout;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--sp-3);
+    min-inline-size: 0;
+    @include scroll-y;
+  }
+
+  @include landscape {
+    grid-template-rows: auto auto;
+    align-content: start;
+    padding-inline-end: var(--sp-1);
   }
 }
 
 .controlsArea {
   grid-area: controls;
   min-inline-size: 0;
+
+  @include two-columns {
+    @include scroll-y;
+  }
+
+  @include landscape {
+    padding-inline-end: var(--sp-1);
+  }
 }
 
 .resultArea {
   grid-area: result;
   min-inline-size: 0;
+
+  @include two-columns {
+    grid-area: auto;
+  }
 }
 
 .schematicArea {
   grid-area: schematic;
   min-inline-size: 0;
+
+  @include landscape {
+    grid-area: auto;
+  }
+
+  // A size container: the decorative schematic is shown only when its compact form fits the space left.
+  @include desktop {
+    grid-area: auto;
+    container-type: size;
+    min-block-size: 0;
+  }
+}
+
+@include desktop {
+  @container (max-height: 8.2rem) {
+    // Two classes: this must win over the .schematic display rule further down.
+    .schematicArea .schematic {
+      display: none;
+    }
+  }
+}
+
+// The frame of the app shell is the console's parent; it becomes a column only on this page, so that the
+// console can fill the height of main.
+@include two-columns {
+  :global(#content) > div:has(> .console) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+  }
+
+  .console {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .panel {
+    flex: 1 1 auto;
+    min-block-size: 0;
+
+    > [data-panel-body] {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-block-size: 0;
+    }
+  }
+
+  .inner {
+    flex: 1 1 auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-block-size: 0;
+  }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -234,6 +340,10 @@
 
   [data-devouring] & {
     background: color-mix(in srgb, var(--c-hull) 70%, var(--c-blood-wash));
+  }
+
+  @include landscape {
+    padding: var(--sp-2);
   }
 
   @include portrait {
@@ -339,9 +449,17 @@
 .fieldControl {
   min-inline-size: 0;
 
-  // The shared Select: the chosen value reads as data.
+  // The shared Select. The long proficiency labels ("Martial ranged two-handed") must be readable in full
+  // in the narrow control column, so the select uses the narrower body face at 16px (no zoom-on-focus on
+  // iOS) with a tighter chevron gutter instead of the wide mono face.
   select {
-    font-family: var(--font-mono);
+    padding-inline: var(--sp-2) calc(var(--sp-2) * 2 + 0.75rem);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    letter-spacing: -0.005em;
+    background-position:
+      calc(100% - var(--sp-2) - 0.375rem) 50%,
+      calc(100% - var(--sp-2)) 50%;
   }
 }
 
@@ -387,6 +505,10 @@
     repeating-linear-gradient(to bottom, var(--_wc-faint) 0 1px, transparent 1px 4px),
     var(--c-void);
   transition: border-color var(--dur-2) var(--ease-out);
+
+  @include desktop {
+    padding: var(--sp-3);
+  }
 }
 
 .resultHeading {
@@ -408,6 +530,10 @@
 .resultBody {
   display: grid;
   gap: var(--sp-3);
+
+  @include desktop {
+    gap: var(--sp-2);
+  }
 }
 
 .stats {
@@ -423,6 +549,10 @@
     border-block-end: var(--bw) dashed var(--c-line);
     color: var(--c-text);
     overflow-wrap: anywhere;
+
+    @include desktop {
+      padding-block: 0.125rem;
+    }
   }
 }
 
@@ -476,6 +606,14 @@
     linear-gradient(var(--_wc-faint) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
     linear-gradient(90deg, var(--_wc-faint) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
     var(--c-void);
+
+  // Desktop: drawing and value plates side by side under the header, so the console fits 1440x900.
+  @include desktop {
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, 13rem);
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+  }
 }
 
 // Slow scanline band over the drawing; at most 4% so the plates keep their contrast.
@@ -501,6 +639,13 @@
   }
 }
 
+.schematicMain {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
 .schematicHead {
   display: flex;
   flex-wrap: wrap;
@@ -510,6 +655,11 @@
 
 .schematicStyle {
   @include display-text(var(--fs-lg));
+
+  @include desktop {
+    font-size: var(--fs-md);
+  }
+
   color: var(--wc-accent);
   text-shadow: 0 0 0.75rem color-mix(in srgb, var(--wc-accent) 35%, transparent);
 }
@@ -517,6 +667,13 @@
 .schematicMeta {
   @include label-text;
   color: var(--c-text-dim);
+
+  // Desktop keeps the header on one line; payload and specialization are in the strap and the controls.
+  @include desktop {
+    &:last-child {
+      display: none;
+    }
+  }
 }
 
 .drawing {
@@ -526,8 +683,9 @@
   max-block-size: 14rem;
   overflow: visible;
 
+  // Desktop: the drawing is scaled down to the height of the plates beside it.
   @include desktop {
-    max-block-size: 9rem;
+    max-block-size: 4.25rem;
   }
   fill: none;
   stroke-linecap: square;
@@ -572,6 +730,12 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-2);
   margin: 0;
+
+  // Desktop: one compact row per plate beside the drawing.
+  @include desktop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-1);
+  }
 }
 
 .plate {
@@ -580,6 +744,13 @@
   padding: var(--sp-1) var(--sp-2);
   border-inline-start: var(--bw-strong) solid var(--wc-accent);
   background: color-mix(in srgb, var(--c-hull-2) 85%, transparent);
+
+  @include desktop {
+    grid-template-columns: 4.5ch minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--sp-2);
+    padding-block: 0.125rem;
+  }
 
   dt {
     @include label-text;

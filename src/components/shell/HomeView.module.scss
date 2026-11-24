@@ -19,6 +19,12 @@
   text-shadow: var(--glow-accent);
 }
 
+// The <h1> inside the <hgroup> takes the title's type from the group.
+.titleText {
+  font-size: inherit;
+  letter-spacing: inherit;
+}
+
 .titleKicker {
   @include label-text;
   color: var(--c-text-faint);
