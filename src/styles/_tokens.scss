@@ -1,0 +1,125 @@
+// Design tokens (plan 7.2). No CSS output here: maps and one mixin only.
+// globals.scss emits them once as CSS custom properties on :root; components use var(--name).
+// Token NAMES are frozen in Step 2 (values may change, tokens may be added, none renamed or removed).
+@use 'sass:map';
+
+$color-tokens: (
+  'c-void': #050706,           // page background
+  'c-hull': #0b0f0d,           // panels
+  'c-hull-2': #121815,         // raised surfaces, inputs
+  'c-hull-3': #1b2420,         // hover and pressed fills
+  'c-line': #2a3830,           // decorative frame lines
+  'c-line-strong': #628072,    // control borders
+  'c-text': #d5e0d8,           // body text
+  'c-text-dim': #9fb0a6,       // secondary text, labels
+  'c-text-faint': #7d9085,     // metadata
+  'c-text-disabled': #5d6b63,  // disabled text
+  'c-phosphor': #a6f05a,       // the sickly phosphor accent
+  'c-phosphor-dim': #6f9e3f,   // accent borders, underlines
+  'c-on-phosphor': #07110a,    // text on a phosphor fill
+  'c-mark-bg': #24361a,        // search highlight background
+  'c-blood': #ff5a5a,          // warning accent as text
+  'c-blood-deep': #8f1420,     // danger fills
+  'c-on-blood': #ffecea,       // text on a danger fill
+  'c-blood-wash': #2a0a0e,     // Devouring surface tint
+  'accent': var(--c-phosphor), // the current accent; components use this, not the raw colour
+  // Added by the Design workstream (Step 2). Used sparingly: badge tones and the drawer scrim.
+  'c-amber': #e8c15a,          // 'warn' badge tone (13.0:1 on hull)
+  'c-ice': #8fc7d6,            // 'info' badge tone (10.6:1 on hull)
+  'c-scrim': rgb(2 4 3 / 0.72), // behind an open drawer
+);
+
+// Weapon creator only: the value of --wc-accent per weapon type.
+$weapon-accents: (
+  'laser': #ffe45c,
+  'plasma': #ff7a3c,
+  'kinetic': #c8d0d4,
+  'gravity': #b08cff,
+  'cryogenic': #7fd8ff,
+  'acidic': #b6f23c,
+  'tesla': #6fb3ff,
+  'sonic': #f5a0ff,
+  'toxic': #7ddc6a,
+  'radiation': #e8ff4a,
+  'devouring': #ff3b4f,
+);
+
+$type-tokens: (
+  // --font-hacked, --font-plex-sans and --font-plex-mono are set on <html> by next/font (src/fonts/index.ts).
+  'font-display': (var(--font-hacked), ui-monospace, monospace),
+  'font-body': (var(--font-plex-sans), system-ui, -apple-system, 'Segoe UI', sans-serif),
+  'font-mono': (var(--font-plex-mono), ui-monospace, 'Cascadia Mono', Consolas, monospace),
+  'fs-xs': 0.8125rem,
+  'fs-sm': clamp(0.875rem, 0.84rem + 0.15vw, 0.9375rem),
+  'fs-base': clamp(1rem, 0.96rem + 0.2vw, 1.125rem),
+  'fs-md': clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem),
+  'fs-lg': clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem),
+  'fs-xl': clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem),
+  'fs-2xl': clamp(2.25rem, 1.6rem + 3vw, 3.5rem),
+  'lh-body': 1.6,
+  'lh-tight': 1.15,
+  'measure': 68ch,
+);
+
+$space-tokens: (
+  'sp-1': 0.25rem,
+  'sp-2': 0.5rem,
+  'sp-3': 0.75rem,
+  'sp-4': 1rem,
+  'sp-5': 1.5rem,
+  'sp-6': 2rem,
+  'sp-7': 3rem,
+  'sp-8': 4rem,
+  'tap': 2.75rem, // 44px: minimum block size of every control
+  // Added by the Design workstream: the gutter of the content column and of panels.
+  'shell-pad': clamp(0.75rem, 0.4rem + 1.6vw, 1.5rem),
+);
+
+$shape-tokens: (
+  'radius-0': 0,
+  'radius-1': 2px,
+  'bw': 1px,
+  'bw-strong': 2px,
+  'glow-accent': 0 0 0.5rem color-mix(in srgb, var(--accent) 45%, transparent),
+  'glow-blood': 0 0 0.75rem rgb(255 59 79 / 0.4),
+);
+
+$z-tokens: (
+  'z-base': 0,
+  'z-content': 1,
+  'z-sticky': 10,
+  'z-rail': 20,
+  'z-bar': 30,
+  'z-scrim': 40,
+  'z-drawer': 50,
+  'z-popover': 60,
+  'z-toast': 70,
+  'z-fx': 80, // scanline overlay, non-interactive
+);
+
+$motion-tokens: (
+  'dur-1': 90ms,
+  'dur-2': 160ms,
+  'dur-3': 240ms,
+  'dur-4': 400ms,
+  'ease-out': cubic-bezier(0.2, 0.8, 0.2, 1),
+  'ease-in-out': cubic-bezier(0.6, 0, 0.2, 1),
+  'ease-flicker': steps(2, end),
+);
+
+$all-tokens: map.merge(
+  map.merge(map.merge($color-tokens, $type-tokens), map.merge($space-tokens, $shape-tokens)),
+  map.merge($z-tokens, $motion-tokens)
+);
+
+// Emits every token as a custom property. Included exactly once, in globals.scss under :root.
+@mixin root-tokens {
+  @each $name, $value in $all-tokens {
+    --#{$name}: #{$value};
+  }
+}
+
+// --wc-accent for one weapon type, e.g. @include weapon-accent('plasma').
+@mixin weapon-accent($type) {
+  --wc-accent: #{map.get($weapon-accents, $type)};
+}

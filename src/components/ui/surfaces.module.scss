@@ -1,0 +1,152 @@
+@use 'index' as *;
+
+// Panel, Badge, StateBlock and VisuallyHidden (plan 7.5).
+
+.visuallyHidden {
+  @include visually-hidden;
+}
+
+// ---- Panel ----
+.panel {
+  --_panel-line: var(--c-line);
+  --_panel-title: var(--c-text);
+
+  @include notched-frame(0.75rem, var(--_panel-line), var(--c-hull));
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.panelAccent {
+  --_panel-line: var(--c-phosphor-dim);
+  --_panel-title: var(--c-phosphor);
+}
+
+.panelDanger {
+  --_panel-line: var(--c-blood-deep);
+  --_panel-title: var(--c-blood);
+}
+
+.panelHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+  min-block-size: var(--tap);
+  // The start padding clears the notch.
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);
+  border-block-end: var(--bw) solid var(--_panel-line);
+}
+
+.panelTitle {
+  @include display-text(var(--fs-md));
+  flex: 1 1 12ch;
+  min-inline-size: 0;
+  color: var(--_panel-title);
+  overflow-wrap: anywhere;
+
+  // A short status tick before every panel title.
+  &::before {
+    content: '';
+    display: inline-block;
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    margin-inline-end: 0.5em;
+    background: var(--_panel-line);
+    vertical-align: 0.1em;
+  }
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.panelBody {
+  min-inline-size: 0;
+  padding: var(--sp-4);
+}
+
+// ---- Badge ----
+.badge {
+  --_badge: var(--c-text-dim);
+
+  @include label-text;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375em;
+  padding: 0.1875rem 0.5rem;
+  border: var(--bw) solid color-mix(in srgb, var(--_badge) 55%, transparent);
+  background: color-mix(in srgb, var(--_badge) 9%, transparent);
+  color: var(--_badge);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.badgeOk { --_badge: var(--c-phosphor); }
+.badgeWarn { --_badge: var(--c-amber); }
+.badgeDanger { --_badge: var(--c-blood); }
+.badgeInfo { --_badge: var(--c-ice); }
+
+// ---- StateBlock ----
+.state {
+  --_state: var(--c-text-dim);
+
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  inline-size: 100%;
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-4);
+  border: var(--bw) dashed color-mix(in srgb, var(--_state) 45%, transparent);
+  background: color-mix(in srgb, var(--_state) 4%, transparent);
+  text-align: center;
+}
+
+.stateTag {
+  @include mono-text(var(--fs-sm));
+  color: var(--_state);
+  letter-spacing: 0.1em;
+  white-space: pre;
+}
+
+.stateTitle {
+  @include display-text(var(--fs-md));
+  max-inline-size: 32ch;
+  color: var(--_state);
+  text-wrap: balance;
+}
+
+.stateBody {
+  max-inline-size: 52ch;
+  color: var(--c-text-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.stateAction {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-2);
+}
+
+.stateLoading {
+  --_state: var(--c-phosphor);
+}
+
+.stateError,
+.stateDenied {
+  --_state: var(--c-blood);
+}
+
+@include motion-ok {
+  .stateLoading .stateTag {
+    animation: xaro-blink 1.2s var(--ease-flicker) infinite;
+  }
+}

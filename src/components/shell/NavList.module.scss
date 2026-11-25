@@ -1,0 +1,293 @@
+@use 'index' as *;
+
+// Navigation in the three layouts (plan 7.4). Base styles: the portrait bottom row.
+
+.nav {
+  grid-area: nav;
+  position: relative;
+  z-index: var(--z-rail);
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  border-block-start: var(--bw) solid var(--c-line);
+  background: var(--c-hull);
+  touch-action: pan-y pinch-zoom;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.li {
+  display: flex;
+  min-inline-size: 0;
+}
+
+// Portrait: Crew, Location, Home, Weapon creator, Menu.
+.crew { order: 1; }
+.location { order: 2; }
+.home { order: 3; }
+.weapon { order: 4; }
+.menu { order: 5; }
+
+.secondary,
+.auth {
+  display: none;
+}
+
+// ---- one nav item (link or drawer toggle) ----
+.item {
+  @include button-reset;
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-inline-size: var(--tap);
+  min-block-size: calc(var(--tap) + var(--sp-2));
+  // Narrow side padding: "LOCATION" must fit on one line in a 72px item at 360px wide.
+  padding: var(--sp-1) 0.125rem;
+  color: var(--c-text-dim);
+  text-align: center;
+  text-decoration: none;
+  transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+
+  @include hover {
+    &:hover {
+      background: var(--c-hull-3);
+      color: var(--accent);
+      text-shadow: none;
+    }
+  }
+
+  &:active {
+    background: var(--c-hull-3);
+    color: var(--c-text);
+  }
+
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+
+  // Current page or open drawer: accent colour plus an edge bar (never colour alone).
+  &[aria-current='page'],
+  &[aria-expanded='true'] {
+    color: var(--accent);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset-inline: 20%;
+      inset-block-start: 0;
+      block-size: var(--bw-strong);
+      background: var(--accent);
+      box-shadow: var(--glow-accent);
+    }
+  }
+}
+
+.icon {
+  flex: none;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+}
+
+.label {
+  @include label-text;
+  max-inline-size: 100%;
+  letter-spacing: 0.02em;
+  // Wrap only between words; a word is broken only if it could not fit at all (never overflows).
+  overflow-wrap: break-word;
+}
+
+.logout {
+  display: flex;
+  flex: 1 1 auto;
+
+  :global([data-logout]) {
+    flex: 1 1 auto;
+  }
+}
+
+// ---- landscape right rail (Location, Login / Logout) ----
+.railR {
+  display: none;
+}
+
+// ---- portrait menu sheet ----
+.menuList {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  list-style: none;
+
+  li {
+    display: flex;
+  }
+}
+
+.menuItem.item,
+.menuItem {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: var(--sp-3);
+  inline-size: 100%;
+  min-block-size: var(--tap);
+  padding-inline: var(--sp-3);
+  border: var(--bw) solid var(--c-line);
+  color: var(--c-text);
+
+  .label {
+    @include display-text(var(--fs-sm));
+  }
+
+  &[aria-current='page']::after {
+    inset-inline: 0 auto;
+    inset-block: 0;
+    inline-size: var(--bw-strong);
+    block-size: auto;
+  }
+}
+
+// The Logout button draws its own frame; its wrapper in the menu sheet does not.
+.logout.menuItem {
+  padding: 0;
+  border: 0;
+}
+
+// ---- landscape: left icon rail ----
+@include landscape {
+  .nav {
+    @include scroll-y;
+    padding: var(--sp-1) 0 calc(var(--sp-1) + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    border-block-start: 0;
+    border-inline-end: var(--bw) solid var(--c-line);
+    touch-action: auto;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+
+  .home,
+  .crew,
+  .weapon,
+  .secondary {
+    display: flex;
+    order: 0;
+  }
+
+  .location,
+  .auth,
+  .menu {
+    display: none;
+  }
+
+  .item {
+    min-block-size: var(--tap);
+
+    &[aria-current='page']::after,
+    &[aria-expanded='true']::after {
+      inset-inline: 0 auto;
+      inset-block: 20%;
+      inline-size: var(--bw-strong);
+      block-size: auto;
+    }
+  }
+
+  .nav .label,
+  .railR .label {
+    @include visually-hidden;
+  }
+
+  .railR {
+    grid-area: railR;
+    position: relative;
+    z-index: var(--z-rail);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    min-block-size: 0;
+    padding: var(--sp-1) env(safe-area-inset-right) calc(var(--sp-1) + env(safe-area-inset-bottom)) 0;
+    border-inline-start: var(--bw) solid var(--c-line);
+    background: var(--c-hull);
+    overflow-y: auto;
+
+    > .item {
+      flex: none;
+    }
+  }
+
+  .railAuth {
+    flex: none;
+  }
+
+  // The Logout button reads vertically so it fits the 3.5rem rail.
+  .railAuth :global([data-logout]) {
+    writing-mode: vertical-rl;
+    min-block-size: 6.5rem;
+    padding: var(--sp-3) var(--sp-1);
+    white-space: nowrap;
+  }
+}
+
+// ---- desktop: vertical list with labels under the crew rail ----
+@include desktop {
+  .nav {
+    padding: var(--sp-3);
+    border-block-start: var(--bw) solid var(--c-line);
+    border-inline-end: var(--bw) solid var(--c-line);
+    touch-action: auto;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  .weapon,
+  .secondary,
+  .auth {
+    display: flex;
+    order: 0;
+  }
+
+  .home,
+  .crew,
+  .location,
+  .menu {
+    display: none;
+  }
+
+  .item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--sp-3);
+    min-block-size: var(--tap);
+    padding-inline: var(--sp-3);
+    border: var(--bw) solid var(--c-line);
+    color: var(--c-text);
+
+    &[aria-current='page']::after {
+      inset-inline: 0 auto;
+      inset-block: 0;
+      inline-size: var(--bw-strong);
+      block-size: auto;
+    }
+  }
+
+  .label {
+    @include display-text(var(--fs-sm));
+  }
+}

@@ -1,0 +1,869 @@
+@use 'index' as *;
+
+// The Kodning weapon creator: a forbidden fabrication console (plan 8.3).
+// The page accent is --wc-accent, chosen by data-type on the console root (plan 7.2); --accent follows it,
+// so focus rings, chevrons and the Smart tick of the shared controls take the colour of the payload.
+// Decorative animation is declared only inside motion-ok; only opacity and transform are animated.
+
+// ---------------------------------------------------------------------------------------------
+// Root and accents
+// ---------------------------------------------------------------------------------------------
+
+.console {
+  @include weapon-accent('laser');
+  --accent: var(--wc-accent);
+  --_wc-soft: color-mix(in srgb, var(--wc-accent) 14%, transparent);
+  --_wc-faint: color-mix(in srgb, var(--wc-accent) 6%, transparent);
+  --_wc-line: color-mix(in srgb, var(--wc-accent) 45%, var(--c-line));
+  --_surface: var(--c-hull);
+
+  position: relative;
+  inline-size: 100%;
+  max-inline-size: 90rem;
+  margin-inline: auto;
+  color: var(--c-text);
+
+  @each $type, $value in $weapon-accents {
+    &[data-type='#{$type}'] {
+      @include weapon-accent($type);
+    }
+  }
+
+  // Devouring: specialization or type. The organism owns the console.
+  &[data-devouring] {
+    @include weapon-accent('devouring');
+    --_surface: var(--c-blood-wash);
+    --_wc-line: color-mix(in srgb, var(--c-blood) 55%, var(--c-blood-deep));
+  }
+}
+
+.panel {
+  // Panel's own body padding is replaced by the console's inner layout (data-* hooks of the shared Panel).
+  > [data-panel-body] {
+    padding: 0;
+  }
+}
+
+.inner {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 0%, var(--_wc-faint), transparent 70%),
+    var(--_surface);
+  transition: background-color var(--dur-3) var(--ease-out);
+
+  @include landscape {
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+  }
+
+  @include desktop {
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+  }
+
+  // Corner brackets in the payload colour; under Devouring they "bleed".
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    pointer-events: none;
+    border-color: var(--wc-accent);
+    border-style: solid;
+    opacity: 0.7;
+  }
+
+  &::before {
+    inset-block-start: var(--sp-2);
+    inset-inline-end: var(--sp-2);
+    border-width: var(--bw-strong) var(--bw-strong) 0 0;
+  }
+
+  &::after {
+    inset-block-end: var(--sp-2);
+    inset-inline-start: var(--sp-2);
+    border-width: 0 0 var(--bw-strong) var(--bw-strong);
+  }
+
+  [data-devouring] & {
+    &::before,
+    &::after {
+      inline-size: 4rem;
+      block-size: 4rem;
+      border-image: linear-gradient(135deg, var(--c-blood), var(--c-blood-deep) 60%, transparent) 1;
+      opacity: 1;
+    }
+  }
+}
+
+// The slow pulse of the frame glow under Devouring (an opacity animation on a pre-drawn glow).
+.pulse {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: inset 0 0 2.5rem rgb(255 59 79 / 0.22), var(--glow-blood);
+  opacity: 0;
+
+  [data-devouring] & {
+    opacity: 0.6;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Warning strap
+// ---------------------------------------------------------------------------------------------
+
+.strap {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  min-block-size: 2rem;
+  padding-inline-end: var(--sp-2);
+  border: var(--bw) solid var(--_wc-line);
+  background: var(--c-void);
+
+  // Landscape has little height: the strap shrinks to the hatching and the status lamp.
+  @include landscape {
+    min-block-size: 1.5rem;
+  }
+
+  @include desktop {
+    min-block-size: 1.5rem;
+  }
+}
+
+.hatch {
+  align-self: stretch;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--wc-accent) 0 0.3125rem,
+    transparent 0.3125rem 0.625rem
+  );
+  opacity: 0.75;
+}
+
+.strapText {
+  @include label-text;
+  overflow: hidden;
+  color: var(--c-text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include landscape {
+    visibility: hidden;
+  }
+}
+
+.strapStatus {
+  @include label-text;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--wc-accent);
+  white-space: nowrap;
+
+  // A status lamp; it blinks only when motion is allowed.
+  &::before {
+    content: '';
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    background: currentcolor;
+    box-shadow: 0 0 0.375rem currentcolor;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Layout (three layouts through the shared mixins; base = single column)
+// ---------------------------------------------------------------------------------------------
+
+// Landscape and desktop share one structure: the console fills the height of main, and the two columns
+// (controls | readout) each scroll on their own if they ever need to, so main itself does not scroll.
+@mixin two-columns {
+  @include landscape { @content; }
+  @include desktop { @content; }
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'controls'
+    'result'
+    'schematic';
+  gap: var(--sp-4);
+  align-items: start;
+
+  @include two-columns {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'controls readout';
+    align-items: stretch;
+    min-block-size: 0;
+  }
+
+  // Landscape (plan 8.3): two columns, each scrolling on its own; the readout column shows the five lines first.
+  // The controls column is wide enough for the longest proficiency label at 844x390.
+  @include landscape {
+    grid-template-columns: minmax(15rem, 1fr) minmax(0, 1.2fr);
+    gap: var(--sp-3);
+  }
+
+  // Desktop (plan 8.3): everything visible at 1440x900. The result always gets its full height; the compact
+  // schematic takes what is left and is hidden when less than its own height is left (container query below).
+  @include desktop {
+    grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+    gap: var(--sp-3) var(--sp-4);
+  }
+}
+
+// Portrait: the wrapper does not exist for the grid, so the order stays controls, result, schematic.
+.readoutArea {
+  display: contents;
+
+  @include two-columns {
+    grid-area: readout;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--sp-3);
+    min-inline-size: 0;
+    @include scroll-y;
+  }
+
+  @include landscape {
+    grid-template-rows: auto auto;
+    align-content: start;
+    padding-inline-end: var(--sp-1);
+  }
+}
+
+.controlsArea {
+  grid-area: controls;
+  min-inline-size: 0;
+
+  @include two-columns {
+    @include scroll-y;
+  }
+
+  @include landscape {
+    padding-inline-end: var(--sp-1);
+  }
+}
+
+.resultArea {
+  grid-area: result;
+  min-inline-size: 0;
+
+  @include two-columns {
+    grid-area: auto;
+  }
+}
+
+.schematicArea {
+  grid-area: schematic;
+  min-inline-size: 0;
+
+  @include landscape {
+    grid-area: auto;
+  }
+
+  // A size container: the decorative schematic is shown only when its compact form fits the space left.
+  @include desktop {
+    grid-area: auto;
+    container-type: size;
+    min-block-size: 0;
+  }
+}
+
+@include desktop {
+  @container (max-height: 8.2rem) {
+    // Two classes: this must win over the .schematic display rule further down.
+    .schematicArea .schematic {
+      display: none;
+    }
+  }
+}
+
+// The frame of the app shell is the console's parent; it becomes a column only on this page, so that the
+// console can fill the height of main.
+@include two-columns {
+  :global(#content) > div:has(> .console) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+  }
+
+  .console {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .panel {
+    flex: 1 1 auto;
+    min-block-size: 0;
+
+    > [data-panel-body] {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      min-block-size: 0;
+    }
+  }
+
+  .inner {
+    flex: 1 1 auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-block-size: 0;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Input matrix
+// ---------------------------------------------------------------------------------------------
+
+.controls {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--c-line);
+  background:
+    linear-gradient(var(--c-hull), var(--c-hull)) padding-box,
+    var(--c-line);
+
+  [data-devouring] & {
+    background: color-mix(in srgb, var(--c-hull) 70%, var(--c-blood-wash));
+  }
+
+  @include landscape {
+    padding: var(--sp-2);
+  }
+
+  @include portrait {
+    // Two columns where there is room for it, still one control per row on a narrow phone.
+    // 15.5rem keeps the longest proficiency label ("Martial ranged two-handed") untruncated.
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+  }
+}
+
+.controlsHead {
+  @include label-text;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding-block-end: var(--sp-2);
+  border-block-end: var(--bw) dashed var(--c-line);
+  color: var(--c-text-faint);
+
+  @include portrait {
+    grid-column: 1 / -1;
+  }
+}
+
+.field {
+  position: relative;
+  display: grid;
+  gap: var(--sp-1);
+  min-inline-size: 0;
+  padding-inline-start: var(--sp-3);
+
+  // The rail on the left of each field lights up while the field is in use.
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.25rem;
+    inset-inline-start: 0;
+    inline-size: var(--bw-strong);
+    background: var(--c-line);
+    transition: background-color var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out);
+    transform-origin: top;
+  }
+
+  @include hover {
+    &:hover:not([data-sealed])::before {
+      background: var(--c-line-strong);
+    }
+
+    &:hover:not([data-sealed]) .fieldLabel {
+      color: var(--c-text);
+    }
+  }
+
+  &:focus-within::before {
+    background: var(--wc-accent);
+  }
+
+  &:focus-within .fieldLabel,
+  &:focus-within .fieldCaption {
+    color: var(--wc-accent);
+  }
+
+  &[data-sealed]::before {
+    background: repeating-linear-gradient(
+      to bottom,
+      var(--c-blood-deep) 0 0.25rem,
+      transparent 0.25rem 0.5rem
+    );
+  }
+}
+
+.fieldHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
+.fieldLabel {
+  @include display-text(var(--fs-sm));
+  color: var(--c-text-dim);
+  transition: color var(--dur-1) var(--ease-out);
+  cursor: pointer;
+
+  [data-sealed] & {
+    color: var(--c-text-disabled);
+    cursor: not-allowed;
+  }
+}
+
+.fieldCaption {
+  @include label-text;
+  overflow: hidden;
+  color: var(--c-text-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-1) var(--ease-out);
+
+  [data-sealed] & {
+    color: var(--c-blood);
+  }
+}
+
+.fieldControl {
+  min-inline-size: 0;
+
+  // The shared Select. The long proficiency labels ("Martial ranged two-handed") must be readable in full
+  // in the narrow control column, so the select uses the narrower body face at 16px (no zoom-on-focus on
+  // iOS) with a tighter chevron gutter instead of the wide mono face.
+  select {
+    padding-inline: var(--sp-2) calc(var(--sp-2) * 2 + 0.75rem);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    letter-spacing: -0.005em;
+    background-position:
+      calc(100% - var(--sp-2) - 0.375rem) 50%,
+      calc(100% - var(--sp-2)) 50%;
+  }
+}
+
+.fieldCheck {
+  @include portrait {
+    align-content: start;
+  }
+}
+
+// Sealed controls (O3: truly disabled): blood hatching instead of the plain disabled dash.
+.fieldControl .sealedSelect:disabled {
+  border-color: var(--c-blood-deep);
+  color: var(--c-text-dim);
+}
+
+.sealedTag {
+  @include label-text;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  justify-self: start;
+  padding: 0.125rem 0.375rem;
+  border: var(--bw) solid var(--c-blood-deep);
+  background: var(--c-blood-wash);
+  color: var(--c-blood);
+
+  &::before {
+    content: '\25B2'; // a warning triangle as text, so the state is never colour alone
+    font-size: 0.625rem;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Result: the five real lines
+// ---------------------------------------------------------------------------------------------
+
+.result {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border: var(--bw) solid var(--_wc-line);
+  background:
+    repeating-linear-gradient(to bottom, var(--_wc-faint) 0 1px, transparent 1px 4px),
+    var(--c-void);
+  transition: border-color var(--dur-2) var(--ease-out);
+
+  @include desktop {
+    padding: var(--sp-3);
+  }
+}
+
+.resultHeading {
+  @include display-text(var(--fs-md));
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--wc-accent);
+
+  // A ruler after the heading.
+  &::after {
+    content: '';
+    flex: 1;
+    block-size: var(--bw);
+    background: linear-gradient(to right, var(--_wc-line), transparent);
+  }
+}
+
+.resultBody {
+  display: grid;
+  gap: var(--sp-3);
+
+  @include desktop {
+    gap: var(--sp-2);
+  }
+}
+
+.stats {
+  display: grid;
+  gap: var(--sp-1);
+
+  .line {
+    @include mono-text(var(--fs-sm));
+    display: grid;
+    grid-template-columns: 8ch minmax(0, 1fr);
+    gap: var(--sp-2);
+    padding-block: var(--sp-1);
+    border-block-end: var(--bw) dashed var(--c-line);
+    color: var(--c-text);
+    overflow-wrap: anywhere;
+
+    @include desktop {
+      padding-block: 0.125rem;
+    }
+  }
+}
+
+.line {
+  margin: 0;
+}
+
+.lineLabel {
+  color: var(--wc-accent);
+  font-weight: 500;
+}
+
+.specialBox {
+  position: relative;
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--c-blood-deep);
+  border-inline-start-width: 0.25rem;
+  background: color-mix(in srgb, var(--c-blood-wash) 70%, var(--c-void));
+
+  .line {
+    @include prose;
+    max-inline-size: none;
+    color: var(--c-text);
+  }
+
+  .lineLabel {
+    color: var(--c-blood);
+  }
+}
+
+.specialCaption {
+  @include label-text;
+  color: var(--c-blood);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Schematic (decorative, aria-hidden)
+// ---------------------------------------------------------------------------------------------
+
+.schematic {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--_wc-line);
+  background:
+    linear-gradient(var(--_wc-faint) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+    linear-gradient(90deg, var(--_wc-faint) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+    var(--c-void);
+
+  // Desktop: drawing and value plates side by side under the header, so the console fits 1440x900.
+  @include desktop {
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, 13rem);
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+  }
+}
+
+// Slow scanline band over the drawing; at most 4% so the plates keep their contrast.
+.scan {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  z-index: 1;
+  block-size: 30%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--wc-accent), transparent);
+  opacity: 0;
+}
+
+.tendrils {
+  z-index: -1;
+  object-fit: cover;
+  opacity: 0.18;
+  mix-blend-mode: screen;
+
+  @include desktop {
+    opacity: 0.3;
+  }
+}
+
+.schematicMain {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
+.schematicHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+}
+
+.schematicStyle {
+  @include display-text(var(--fs-lg));
+
+  @include desktop {
+    font-size: var(--fs-md);
+  }
+
+  color: var(--wc-accent);
+  text-shadow: 0 0 0.75rem color-mix(in srgb, var(--wc-accent) 35%, transparent);
+}
+
+.schematicMeta {
+  @include label-text;
+  color: var(--c-text-dim);
+
+  // Desktop keeps the header on one line; payload and specialization are in the strap and the controls.
+  @include desktop {
+    &:last-child {
+      display: none;
+    }
+  }
+}
+
+.drawing {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: 14rem;
+  overflow: visible;
+
+  // Desktop: the drawing is scaled down to the height of the plates beside it.
+  @include desktop {
+    max-block-size: 4.25rem;
+  }
+  fill: none;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.ticks {
+  stroke: var(--c-line-strong);
+  stroke-width: 1;
+}
+
+.tickFill {
+  fill: var(--c-line-strong);
+  stroke: none;
+}
+
+.outline {
+  stroke: var(--wc-accent);
+  stroke-width: 1.5;
+  fill: color-mix(in srgb, var(--wc-accent) 7%, transparent);
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--wc-accent) 55%, transparent));
+}
+
+.detail {
+  stroke: color-mix(in srgb, var(--wc-accent) 55%, var(--c-line));
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.core {
+  stroke: var(--wc-accent);
+  stroke-width: 1.5;
+}
+
+.coreDot {
+  fill: var(--wc-accent);
+  stroke: none;
+}
+
+.plates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin: 0;
+
+  // Desktop: one compact row per plate beside the drawing.
+  @include desktop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-1);
+  }
+}
+
+.plate {
+  display: grid;
+  gap: 0.125rem;
+  padding: var(--sp-1) var(--sp-2);
+  border-inline-start: var(--bw-strong) solid var(--wc-accent);
+  background: color-mix(in srgb, var(--c-hull-2) 85%, transparent);
+
+  @include desktop {
+    grid-template-columns: 4.5ch minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--sp-2);
+    padding-block: 0.125rem;
+  }
+
+  dt {
+    @include label-text;
+    color: var(--c-text-faint);
+  }
+
+  dd {
+    @include mono-text(var(--fs-sm));
+    margin: 0;
+    color: var(--c-text);
+    overflow-wrap: anywhere;
+  }
+}
+
+// A one-shot sweep of the payload colour when the type changes (re-mounted by key).
+.typeFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--wc-accent) 18%, transparent), transparent);
+  opacity: 0;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Motion (only when the user allows it)
+// ---------------------------------------------------------------------------------------------
+
+@keyframes wc-reprint {
+  0% { opacity: 0.15; }
+  35% { opacity: 1; }
+  55% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+@keyframes wc-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes wc-sweep {
+  from { opacity: 1; transform: translateX(-100%); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes wc-scan {
+  from { transform: translateY(-100%); opacity: 0.04; }
+  to { transform: translateY(400%); opacity: 0.04; }
+}
+
+@keyframes wc-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes wc-glitch {
+  0% { transform: translate(0); opacity: 1; }
+  15% { transform: translate(-3px, 1px) skewX(-4deg); opacity: 0.7; }
+  30% { transform: translate(3px, -1px) skewX(3deg); opacity: 1; }
+  45% { transform: translate(-1px, 0); opacity: 0.85; }
+  100% { transform: translate(0); opacity: 1; }
+}
+
+@keyframes wc-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes wc-blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.25; }
+}
+
+@include motion-ok {
+  .line {
+    animation: wc-reprint 120ms var(--ease-flicker) both;
+  }
+
+  .outline path {
+    stroke-dasharray: 1;
+    animation: wc-draw var(--dur-4) var(--ease-out) both;
+  }
+
+  .typeFlash {
+    animation: wc-sweep 420ms var(--ease-out) both;
+  }
+
+  .scan {
+    animation: wc-scan 6s linear infinite;
+  }
+
+  .strapStatus::before {
+    animation: wc-blink 1.6s steps(1, end) infinite;
+  }
+
+  .tendrils {
+    animation: wc-fade-in 900ms var(--ease-out) both;
+  }
+
+  .console[data-devouring] {
+    .pulse {
+      animation: wc-pulse 4s var(--ease-in-out) infinite;
+    }
+
+    .inner {
+      animation: wc-glitch 260ms var(--ease-flicker) 1;
+    }
+  }
+}
+
+// Under reduced motion the scanline band is not shown at all (it would be a static stripe).
+@include reduced-motion {
+  .scan {
+    display: none;
+  }
+}

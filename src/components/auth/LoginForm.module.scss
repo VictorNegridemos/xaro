@@ -1,0 +1,14 @@
+@use 'index' as *;
+
+.form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+// The live region keeps its place so the form does not jump when a message appears.
+.status {
+  min-height: calc(var(--fs-sm) * var(--lh-body));
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--c-blood);
+}

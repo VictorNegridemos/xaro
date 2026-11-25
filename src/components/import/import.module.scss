@@ -1,0 +1,162 @@
+@use 'index' as *;
+
+// Import page pieces (plan 6.8); the page frame comes from PageFrame. Only tokens and the Foundation
+// mixins are used here.
+
+.explainer p {
+  line-height: var(--lh-body);
+  max-inline-size: var(--measure);
+}
+
+.command {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--accent);
+  background: var(--c-hull-2);
+  padding: 0 var(--sp-1);
+  overflow-wrap: anywhere;
+}
+
+.uploadForm {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.fileInput {
+  @include tap-target;
+  @include focus-ring;
+  inline-size: 100%;
+  padding: var(--sp-2);
+  border: var(--bw) dashed var(--c-line-strong);
+  background: var(--c-hull-2);
+  color: var(--c-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  &::file-selector-button {
+    @include tap-target;
+    margin-inline-end: var(--sp-3);
+    padding: 0 var(--sp-3);
+    border: var(--bw) solid var(--c-phosphor-dim);
+    background: var(--c-hull-3);
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  &:disabled {
+    color: var(--c-text-disabled);
+    cursor: not-allowed;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--c-blood);
+  }
+}
+
+.uploadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.uploadStatus {
+  min-block-size: 1.5em;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+
+  &:empty {
+    min-block-size: 0;
+  }
+}
+
+.queueList {
+  display: grid;
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queueItem {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--c-line);
+  background: var(--c-hull-2);
+
+  &[data-status='failed'] {
+    border-color: var(--c-blood-deep);
+  }
+}
+
+.queueHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.filename {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-4);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--c-text-faint);
+
+  div {
+    display: flex;
+    gap: var(--sp-1);
+  }
+
+  dt {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--c-text-dim);
+  }
+}
+
+.result {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+}
+
+.error {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--c-blood);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.remove {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.removeError {
+  color: var(--c-blood);
+  font-size: var(--fs-sm);
+}
+
+.queue {
+  min-inline-size: 0;
+}

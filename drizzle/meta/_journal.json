@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795479252041,
+      "tag": "0000_extensions_and_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795479254652,
+      "tag": "0001_knowledge_base",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795479257038,
+      "tag": "0002_triggers",
+      "breakpoints": true
+    }
+  ]
+}

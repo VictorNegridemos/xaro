@@ -1,0 +1,257 @@
+@use 'index' as *;
+
+// The ship bar (plan 7.4). Base styles are the compact portrait bar; desktop and landscape adjust it.
+
+.bar {
+  grid-area: ship;
+  position: relative;
+  z-index: var(--z-bar);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-1);
+  padding: calc(var(--sp-1) + env(safe-area-inset-top)) var(--sp-2) var(--sp-2);
+  border-block-end: var(--bw) solid var(--c-line);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--c-phosphor) 5%, transparent), transparent 80%),
+    var(--c-hull);
+  touch-action: pan-x pinch-zoom;
+}
+
+// ---- brand ----
+.brand {
+  display: none;
+  align-content: center;
+  gap: 0.125rem;
+  min-block-size: var(--tap);
+  padding-inline: var(--sp-2) var(--sp-4);
+  color: var(--c-phosphor);
+  text-decoration: none;
+
+  @include hover {
+    &:hover {
+      text-shadow: var(--glow-accent);
+    }
+  }
+
+  &:active {
+    color: var(--c-text);
+  }
+}
+
+.brandMark {
+  @include display-text(var(--fs-lg));
+  letter-spacing: 0.12em;
+}
+
+.brandSub {
+  @include label-text;
+  color: var(--c-text-faint);
+}
+
+// ---- tiles ----
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tileItem {
+  display: flex;
+  min-inline-size: 0;
+}
+
+.tile {
+  --_status: var(--c-blood);
+
+  @include button-reset;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-inline-size: 0;
+  min-block-size: var(--tap);
+  padding: var(--sp-1);
+  border: var(--bw) solid var(--c-line);
+  background: var(--c-hull-2);
+  color: var(--c-text);
+  text-align: center;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+
+  @include hover {
+    &:hover {
+      border-color: var(--accent);
+      background: var(--c-hull-3);
+    }
+  }
+
+  &:active {
+    background: var(--c-hull-3);
+    transform: translateY(1px);
+  }
+
+  &[aria-expanded='true'] {
+    border-color: var(--accent);
+    background: var(--c-hull-3);
+    box-shadow: inset 0 calc(-1 * var(--bw-strong)) 0 var(--accent);
+  }
+}
+
+.online {
+  --_status: var(--c-phosphor);
+}
+
+.full {
+  display: none;
+}
+
+.abbr {
+  @include display-text(var(--fs-sm));
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--_status);
+}
+
+.glyph {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1;
+}
+
+.statusText {
+  @include visually-hidden;
+}
+
+.offline .glyph {
+  text-shadow: var(--glow-blood);
+}
+
+.noSignal {
+  @include label-text;
+  display: flex;
+  align-items: center;
+  min-block-size: var(--tap);
+  padding-inline: var(--sp-2);
+  color: var(--c-blood);
+}
+
+// ---- Kodning reserve ----
+.reserve {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-inline-size: 0;
+}
+
+.reserveLabel,
+.reserveValue {
+  @include visually-hidden;
+}
+
+.reserveTrack {
+  position: relative;
+  flex: 1 1 auto;
+  display: block;
+  block-size: 0.25rem;
+  background: var(--c-hull-3);
+  overflow: hidden;
+}
+
+.reserveFill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  background: var(--c-blood);
+  box-shadow: var(--glow-blood);
+}
+
+// ---- desktop: brand, full names with status words, labelled reserve bar ----
+@include desktop {
+  .bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--sp-4);
+    row-gap: var(--sp-2);
+    padding: var(--sp-2) var(--shell-pad);
+  }
+
+  .brand {
+    display: grid;
+    grid-row: 1 / 3;
+    border-inline-end: var(--bw) solid var(--c-line);
+  }
+
+  .tiles {
+    gap: var(--sp-2);
+  }
+
+  .tile {
+    min-block-size: 3.25rem;
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  .full {
+    @include display-text(var(--fs-sm));
+    display: block;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .abbr {
+    display: none;
+  }
+
+  .statusText {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    @include label-text;
+  }
+
+  .reserveLabel,
+  .reserveValue {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    @include label-text;
+    color: var(--c-text-faint);
+  }
+
+  .reserveValue {
+    color: var(--c-blood);
+  }
+}
+
+// ---- landscape: compact tiles; the search box sits in its own cell to the right ----
+@include landscape {
+  .bar {
+    padding: var(--sp-1) var(--sp-2);
+    border-inline: var(--bw) solid var(--c-line);
+    align-content: center;
+  }
+
+  .tile {
+    flex-direction: row;
+    gap: 0.35em;
+  }
+}

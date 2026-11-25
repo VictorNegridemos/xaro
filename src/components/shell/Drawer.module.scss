@@ -1,0 +1,205 @@
+@use 'index' as *;
+
+// Drawers and sheets of the shell (plan 7.4). Movement is transform only; a closed drawer is
+// visibility: hidden after the slide (delayed visibility transition), so it is never focusable.
+
+.drawer {
+  --_slide: translate3d(0, 0, 0);
+
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  min-block-size: 0;
+  border: 0 solid var(--c-line);
+  background: var(--c-hull);
+  color: var(--c-text);
+  visibility: hidden;
+  transform: var(--_slide);
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    visibility 0s linear var(--dur-3);
+  z-index: var(--z-drawer);
+
+  &[data-open] {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform var(--dur-3) var(--ease-out),
+      visibility 0s linear 0s;
+    box-shadow: 0 0 2.5rem rgb(0 0 0 / 0.7);
+  }
+}
+
+@include motion-ok {
+  .drawer[data-open] .body {
+    animation: xaro-glitch-in var(--dur-3) var(--ease-flicker) 1;
+  }
+}
+
+// ---- side drawers (crew, location) ----
+.left,
+.right {
+  position: fixed;
+  inset-block: 0;
+  inline-size: min(22rem, 88vw);
+  padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+  touch-action: pan-y pinch-zoom;
+}
+
+.left {
+  --_slide: translate3d(-100%, 0, 0);
+
+  inset-inline-start: 0;
+  padding-inline-start: env(safe-area-inset-left);
+  border-inline-end-width: var(--bw);
+  border-inline-end-color: var(--c-phosphor-dim);
+}
+
+.right {
+  --_slide: translate3d(100%, 0, 0);
+
+  inset-inline-end: 0;
+  padding-inline-end: env(safe-area-inset-right);
+  border-inline-start-width: var(--bw);
+  border-inline-start-color: var(--c-phosphor-dim);
+}
+
+@include landscape {
+  .left,
+  .right {
+    inline-size: min(24rem, 60vw);
+  }
+}
+
+// ---- bottom sheet (menu) ----
+.bottom {
+  --_slide: translate3d(0, 100%, 0);
+
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  max-block-size: 80dvh;
+  padding-block-end: env(safe-area-inset-bottom);
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  border-block-start-width: var(--bw);
+  border-block-start-color: var(--c-phosphor-dim);
+}
+
+// ---- top sheet (systems): placed in the grid, so it never covers the ship bar ----
+.top {
+  --_slide: translate3d(0, -0.75rem, 0);
+
+  position: absolute;
+  grid-area: main;
+  inset-block-start: 0;
+  inset-inline: 0;
+  max-block-size: min(80dvh, 100%);
+  border-width: 0 var(--bw) var(--bw);
+  border-color: var(--c-phosphor-dim);
+  // Below the ship bar so the tiles stay tappable while the sheet is open.
+  z-index: calc(var(--z-bar) - 1);
+  opacity: 0;
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    opacity var(--dur-2) var(--ease-out),
+    visibility 0s linear var(--dur-3);
+
+  &[data-open] {
+    opacity: 1;
+    transition:
+      transform var(--dur-3) var(--ease-out),
+      opacity var(--dur-2) var(--ease-out),
+      visibility 0s linear 0s;
+  }
+}
+
+@include desktop {
+  .top {
+    max-block-size: 70%;
+    margin-inline: var(--shell-pad);
+  }
+}
+
+@include landscape {
+  .top {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+}
+
+// ---- static rails on desktop (crew, location) ----
+@include desktop {
+  .staticDesktop.left,
+  .staticDesktop.right {
+    position: relative;
+    inset: auto;
+    inline-size: auto;
+    padding: 0;
+    border-width: 0;
+    visibility: visible;
+    transform: none;
+    transition: none;
+    box-shadow: none;
+    z-index: var(--z-rail);
+    touch-action: auto;
+  }
+
+  .staticDesktop .close {
+    display: none;
+  }
+
+  .staticDesktop .body {
+    animation: none;
+  }
+}
+
+// ---- inside ----
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-block-size: calc(var(--tap) + var(--sp-2));
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-4);
+  border-block-end: var(--bw) solid var(--c-line);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--c-phosphor) 7%, transparent), transparent 70%),
+    var(--c-hull);
+}
+
+.title {
+  @include display-text(var(--fs-md));
+  min-inline-size: 0;
+  color: var(--c-phosphor);
+  overflow-wrap: anywhere;
+
+  &::before {
+    content: '// ';
+    color: var(--c-phosphor-dim);
+  }
+}
+
+.close {
+  flex: none;
+}
+
+.body {
+  @include scroll-y;
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+// Grab handle of a sheet: the swipe surface that closes it.
+.handle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  block-size: 1.5rem;
+  touch-action: none;
+
+  > span {
+    inline-size: 3rem;
+    block-size: 0.25rem;
+    background: var(--c-line-strong);
+  }
+}
